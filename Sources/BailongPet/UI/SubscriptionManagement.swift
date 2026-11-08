@@ -11,14 +11,14 @@ enum SubscriptionManagement {
             return ["Team","Business","Enterprise","Edu","Science"].contains(where:{plan.hasPrefix($0)}) ? .organization : .personal
         }
     }
-    var title:String {self == .api || self == .bedrock || self == .gcp ? "计费管理" : "订阅管理"}
+    var title:String {self == .api || self == .bedrock || self == .gcp ? "Billing" : "Manage Subscription"}
     var destinations:[(String,String)] {
         switch self {
-        case .personal:return [("ChatGPT 网页订阅","https://chatgpt.com/settings/billing"),("Google Play 订阅","https://play.google.com/store/account/subscriptions"),("Apple 订阅","https://apps.apple.com/account/subscriptions")]
-        case .organization:return [("ChatGPT 工作区管理","https://chatgpt.com/")]
-        case .api:return [("OpenAI API 计费","https://platform.openai.com/settings/organization/billing/overview")]
-        case .bedrock:return [("AWS 计费","https://console.aws.amazon.com/billing/")]
-        case .gcp:return [("Google Cloud 计费","https://console.cloud.google.com/billing")]
+        case .personal:return [("ChatGPT Web Subscription","https://chatgpt.com/settings/billing"),("Google Play Subscriptions","https://play.google.com/store/account/subscriptions"),("Apple Subscriptions","https://apps.apple.com/account/subscriptions")]
+        case .organization:return [("ChatGPT Workspace Management","https://chatgpt.com/")]
+        case .api:return [("OpenAI API Billing","https://platform.openai.com/settings/organization/billing/overview")]
+        case .bedrock:return [("AWS Billing","https://console.aws.amazon.com/billing/")]
+        case .gcp:return [("Google Cloud Billing","https://console.cloud.google.com/billing")]
         }
     }
 }

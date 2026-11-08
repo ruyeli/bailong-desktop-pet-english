@@ -16,22 +16,22 @@ enum MessageFileLink {
         guard scheme == nil || scheme == "file" || scheme == "sandbox" else {return false}
         if scheme == nil && url.path.isEmpty {return false}
         if scheme == "sandbox" {
-            showError("此文件不在本机",PetFailure(message:"请在 Codex 中下载文件后，再到访达查看。"))
+            showError("This file is not on this Mac",PetFailure(message:"Download the file in Codex, then view it in Finder."))
             return true
         }
         guard url.host == nil || url.host == "" || url.host == "localhost" else {
-            showError("无法定位文件",PetFailure(message:"此链接不是本机文件地址。")); return true
+            showError("Unable to locate file",PetFailure(message:"This link is not a local file URL.")); return true
         }
         let path = (url.path as NSString).expandingTildeInPath
         let file: URL
         if path.hasPrefix("/") {file = URL(fileURLWithPath:path)}
         else if let directory {file = directory.appendingPathComponent(path)}
         else {
-            showError("无法定位文件",PetFailure(message:"此链接使用相对路径，但这条消息没有任务文件夹信息。")); return true
+            showError("Unable to locate file",PetFailure(message:"This link is relative, but the message has no workspace folder.")); return true
         }
         let target = existingFile(file.standardizedFileURL)
         guard let target else {
-            showError("文件不存在",PetFailure(message:file.path)); return true
+            showError("File not found",PetFailure(message:file.path)); return true
         }
         FinderFileReveal.reveal(target)
         return true

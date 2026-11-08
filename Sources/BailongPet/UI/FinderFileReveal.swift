@@ -5,11 +5,11 @@ enum FinderFileReveal {
     // 目录入口沿用历史工具栏行为；不走文件定位脚本，不枚举访达窗口。
     static func openDirectory(_ directory:URL) {
         if !NSWorkspace.shared.open(directory) {
-            showError("无法打开任务文件夹",PetFailure(message:"请确认目录仍然存在："+directory.path))
+            showError("Unable to open workspace",PetFailure(message:"Check that this folder still exists: "+directory.path))
         }
     }
 
-    private static let queue = DispatchQueue(label:"白龙桌宠 访达定位",qos:.userInitiated)
+    private static let queue = DispatchQueue(label:"Bailong Finder Reveal",qos:.userInitiated)
     // 先取得窗口 ID 列表；直接 repeat ... in Finder windows 会把 item 引用交给 Finder，读到窗口内文件。
     static let script = """
     on run arguments
@@ -56,12 +56,12 @@ enum FinderFileReveal {
                 let detail = String(decoding:data,as:UTF8.self).trimmingCharacters(in:.whitespacesAndNewlines)
                 DispatchQueue.main.async {
                     let message = detail.contains("(-1743)")
-                        ? "请在系统设置 → 隐私与安全性 → 自动化中，允许白龙桌宠Swift控制访达，然后重新点击文件链接。"
-                        : "访达未完成文件定位。\n" + (detail.isEmpty ? "脚本退出码：\(process.terminationStatus)" : detail)
-                    showError("无法在访达中显示",PetFailure(message:message))
+                        ? "Allow Bailong Desktop Pet to control Finder in System Settings → Privacy & Security → Automation, then click the file link again."
+                        : "Finder could not reveal the file.\n" + (detail.isEmpty ? "Script exit code: \(process.terminationStatus)" : detail)
+                    showError("Unable to show in Finder",PetFailure(message:message))
                 }
             } catch {
-                DispatchQueue.main.async {showError("无法启动访达定位",error)}
+                DispatchQueue.main.async {showError("Unable to launch Finder reveal",error)}
             }
         }
     }
