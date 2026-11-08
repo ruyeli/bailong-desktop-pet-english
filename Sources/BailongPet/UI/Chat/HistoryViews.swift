@@ -68,7 +68,7 @@ final class HistoryConversationCell: NSTableCellView {
         sourceIcon.image = NSImage(systemSymbolName:symbol ?? kind.symbol,accessibilityDescription:symbol == nil ? kind.title : title)
         addSubview(sourceIcon); addSubview(titleLabel); textField = titleLabel; imageView = sourceIcon
         hoverHelp = [title,snippet].compactMap {$0}.joined(separator:"\n")
-        setAccessibilityLabel((symbol == nil ? kind.title+"，" : "")+title+(snippet.map {"，"+$0} ?? ""))
+        setAccessibilityLabel((symbol == nil ? kind.title+", " : "")+title+(snippet.map {", "+$0} ?? ""))
         sourceIcon.translatesAutoresizingMaskIntoConstraints = false; titleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             sourceIcon.leadingAnchor.constraint(equalTo:leadingAnchor,constant:20),sourceIcon.centerYAnchor.constraint(equalTo:titleLabel.centerYAnchor),sourceIcon.widthAnchor.constraint(equalToConstant:18),sourceIcon.heightAnchor.constraint(equalToConstant:18),

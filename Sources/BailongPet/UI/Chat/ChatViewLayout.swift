@@ -6,7 +6,7 @@ enum ChatViewLayout {
         button.imagePosition = .imageLeading
         button.extraHorizontalPadding = 24
         button.configureFlexible(font:button.font ?? .systemFont(ofSize:13))
-        button.setAccessibilityLabel("发送")
+        button.setAccessibilityLabel("Send")
     }
 
     static func pin(_ view: NSView, to parent: NSView, inset: CGFloat = 0, verticalInset: CGFloat? = nil) {

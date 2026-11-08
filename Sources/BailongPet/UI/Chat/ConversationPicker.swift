@@ -6,13 +6,13 @@ final class ConversationPicker:NSButton,NSPopoverDelegate {
     private let popover = NSPopover()
     init() {
         super.init(frame:.zero)
-        title = "选择会话…"; bezelStyle = .rounded
+        title = "Choose Chat…"; bezelStyle = .rounded
         image = NSImage(systemSymbolName:"chevron.down",accessibilityDescription:nil); imagePosition = .imageTrailing
         target = self; action = #selector(open)
         popover.delegate = self
         setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
         (cell as? NSButtonCell)?.lineBreakMode = .byTruncatingMiddle
-        setAccessibilityLabel("选择目标会话")
+        setAccessibilityLabel("Select target chat")
     }
     required init?(coder:NSCoder) {fatalError()}
     func close() {popover.performClose(nil)}
@@ -34,7 +34,7 @@ final class ConversationPicker:NSButton,NSPopoverDelegate {
 
 private final class ConversationPickerContent:NSViewController,NSTableViewDataSource,NSTableViewDelegate {
     let search = NSSearchField()
-    private let table = NSTableView(), empty = label("没有可选会话")
+    private let table = NSTableView(), empty = label("No chats available")
     private let conversations:[Conversation]
     private var filtered = [Conversation]()
     var onSelect:(String) -> Void = {_ in}
@@ -42,7 +42,7 @@ private final class ConversationPickerContent:NSViewController,NSTableViewDataSo
     required init?(coder:NSCoder) {fatalError()}
     override func loadView() {
         view = NSView(frame:NSRect(x:0,y:0,width:400,height:320))
-        search.placeholderString = "搜索会话标题或工作区"; search.target = self; search.action = #selector(filter)
+        search.placeholderString = "Search chat titles or workspaces"; search.target = self; search.action = #selector(filter)
         search.sendsSearchStringImmediately = true
         let scroll = NSScrollView(); scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
         let column = NSTableColumn(identifier:.init("conversation")); table.addTableColumn(column); table.headerView = nil
@@ -69,6 +69,6 @@ private final class ConversationPickerContent:NSViewController,NSTableViewDataSo
     func tableView(_ tableView:NSTableView,viewFor tableColumn:NSTableColumn?,row:Int) -> NSView? {
         let conversation = filtered[row]
         let active = conversation.turns.last.map {activeStatuses.contains($0.status)} ?? false
-        return HistoryConversationCell(title:conversation.title,external:conversation.external,snippet:(active ? "执行中 · " : "")+conversation.cwd)
+        return HistoryConversationCell(title:conversation.title,external:conversation.external,snippet:(active ? "Running · " : "")+conversation.cwd)
     }
 }

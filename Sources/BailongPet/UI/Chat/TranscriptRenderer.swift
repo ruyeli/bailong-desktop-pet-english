@@ -26,8 +26,8 @@ final class TranscriptRenderer {
         }
         if turns.isEmpty {
             invalidate()
-            append("与"+PetPreferences.shared.petName+"聊聊",font:.systemFont(ofSize:18,weight:.semibold),color:AppAccent.color)
-            append(conversation.external ? "在下方输入想做的事。" : PetPreferences.shared.statusLine("conversationEmptyTemplate"),color:.secondaryLabelColor)
+            append("Chat with "+PetPreferences.shared.petName,font:.systemFont(ofSize:18,weight:.semibold),color:AppAccent.color)
+            append(conversation.external ? "Enter what you'd like to do below." : PetPreferences.shared.statusLine("conversationEmptyTemplate"),color:.secondaryLabelColor)
             return result
         }
         let style = style(conversation)
@@ -46,10 +46,10 @@ final class TranscriptRenderer {
             }
             append(turn.status == "completed" ? PetPreferences.shared.petName+" · 「"+PetPreferences.shared.taskResultLine("completed")+"」" : PetPreferences.shared.petName+" · "+turnStatus(turn.status),font:.systemFont(ofSize:PetPreferences.shared.number("messageFontSize")+2,weight:.semibold),color:AppAccent.color,after:6)
             // 只隐藏旧版外部观察器合成的步骤报错，不删历史字段或原始对话内容。
-            let steps = conversation.external && body.steps.hasPrefix("这一步执行遇到问题，任务尚未报告完成。") ? "" : body.steps
-            for (heading,text) in [("公开思考摘要",body.summary),("执行记录",steps)] where !text.isEmpty {
+            let steps = conversation.external && body.steps.hasPrefix("This step encountered a problem. The task has not reported completion.") ? "" : body.steps
+            for (heading,text) in [("Public thinking summary",body.summary),("Execution log",steps)] where !text.isEmpty {
                 append(heading,font:.systemFont(ofSize:max(11,PetPreferences.shared.number("messageFontSize")-1),weight:.medium),color:.secondaryLabelColor,after:4)
-                if heading == "公开思考摘要" {appendMarkdown(text,font:.systemFont(ofSize:max(11,PetPreferences.shared.number("messageFontSize")-1)),color:.secondaryLabelColor)}
+                if heading == "Public thinking summary" {appendMarkdown(text,font:.systemFont(ofSize:max(11,PetPreferences.shared.number("messageFontSize")-1)),color:.secondaryLabelColor)}
                 else {append(text,font:.systemFont(ofSize:max(11,PetPreferences.shared.number("messageFontSize")-1)),color:.secondaryLabelColor)}
             }
             if let notice = body.sensitiveQuestionNotice {append(notice,color:.secondaryLabelColor)}
@@ -65,6 +65,6 @@ final class TranscriptRenderer {
         return result
     }
     private func turnStatus(_ value: String) -> String {
-        ["pending":"准备中","running":"处理中","inProgress":"处理中","completed":"已完成","failed":"未完成","interrupted":"已停止","waitingForApproval":"等待批准","waitingForInput":"等待补充","unknown":"状态待确认"][value] ?? "状态待确认"
+        ["pending":"Preparing","running":"Processing","inProgress":"Processing","completed":"Completed","failed":"Incomplete","interrupted":"Stopped","waitingForApproval":"Waiting for approval","waitingForInput":"Waiting for more input","unknown":"Status unconfirmed"][value] ?? "Status unconfirmed"
     }
 }

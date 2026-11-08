@@ -8,7 +8,7 @@ final class ChatModeControl: NSSegmentedControl {
         segmentCount = labels.count; trackingMode = .selectOne; segmentStyle = .rounded
         for (index,title) in labels.enumerated() {setLabel(title,forSegment:index)}
         selectedSegment = 0; target = self; action = #selector(changed)
-        setAccessibilityLabel("对话类型")
+        setAccessibilityLabel("Chat type")
         setContentHuggingPriority(.required,for:.horizontal)
     }
     required init?(coder:NSCoder) {fatalError()}
@@ -24,7 +24,7 @@ final class ChatMetadataRow: NSStackView {
         caption.font = .systemFont(ofSize:12); caption.textColor = .secondaryLabelColor
         caption.setContentCompressionResistancePriority(.required,for:.horizontal)
         addArrangedSubview(caption); addArrangedSubview(content)
-        caption.widthAnchor.constraint(equalToConstant:("工作区" as NSString).size(withAttributes:[.font:caption.font!]).width.rounded(.up)).isActive = true
+        caption.widthAnchor.constraint(equalToConstant:("Workspace" as NSString).size(withAttributes:[.font:caption.font!]).width.rounded(.up)).isActive = true
         if let accessory {addArrangedSubview(accessory); accessory.setContentCompressionResistancePriority(.required,for:.horizontal)}
         if !expandsContent {addArrangedSubview(NSView()); content.setContentHuggingPriority(.defaultHigh,for:.horizontal)}
     }
@@ -36,20 +36,20 @@ final class ChatReadOnlyModelField: ModelSummaryButton {
     init() {
         super.init(frame:.zero)
         isEnabled = false
-        image = NSImage(systemSymbolName:"lock",accessibilityDescription:"只读"); imagePosition = .imageTrailing
+        image = NSImage(systemSymbolName:"lock",accessibilityDescription:"Read-only"); imagePosition = .imageTrailing
         setAccessibilityRole(.staticText)
     }
     required init?(coder:NSCoder) {fatalError()}
     func update(settings:DesktopReply.Settings?,error:String?) {
         if let settings {
-            let effort = settings.effort.map(ChatModelSettings.effortName) ?? "未提供"
-            title = ModelPresentation.summary(model:settings.model,effort:effort)+" · 只读"
-            let source = settings.effortFromHistory ? "思考等级来自会话记录。" : ""
-            hoverHelp = "沿用 Codex 原会话设置，当前只读。"+source+"\n模型："+settings.model+"\n思考等级："+effort
+            let effort = settings.effort.map(ChatModelSettings.effortName) ?? "Not provided"
+            title = ModelPresentation.summary(model:settings.model,effort:effort)+" · Read-only"
+            let source = settings.effortFromHistory ? "Reasoning effort comes from the chat record." : ""
+            hoverHelp = "Uses the original Codex chat settings, currently read-only."+source+"\nModel: "+settings.model+"\nReasoning effort: "+effort
         } else {
-            title = error ?? "正在读取 Codex 会话设置…"; hoverHelp = title
+            title = error ?? "Reading Codex chat settings…"; hoverHelp = title
         }
-        setAccessibilityLabel("Codex 模型与思考等级，只读")
+        setAccessibilityLabel("Codex model and reasoning effort, read-only")
         setAccessibilityValue(title)
         setAccessibilityHelp(hoverHelp)
     }
@@ -73,7 +73,7 @@ final class ChatReplyPreview: NSTextField {
         // 复用现有 Markdown 解析，仅生成显示摘要；历史仍保存原文。
         let plain = MarkdownText.render(markdown,font:font!).string.split(whereSeparator:{$0.isWhitespace}).joined(separator:" ")
         let excerpt = String(plain.prefix(180))+(plain.count > 180 ? "…" : "")
-        stringValue = excerpt.isEmpty ? "" : "最近回复："+excerpt
+        stringValue = excerpt.isEmpty ? "" : "Latest reply: "+excerpt
         isHidden = excerpt.isEmpty
         hoverHelp = plain.isEmpty ? nil : String(plain.prefix(200))+(plain.count > 200 ? "..." : "")
         setAccessibilityLabel(stringValue)
@@ -91,7 +91,7 @@ final class WorkspaceLinkButton: NSButton,LinkCursorControl {
         focusRingType = .exterior; target = self; action = #selector(openDirectory)
         (cell as? NSButtonCell)?.lineBreakMode = .byTruncatingMiddle
         setContentCompressionResistancePriority(.defaultLow,for:.horizontal)
-        setAccessibilityLabel("在访达中打开工作区")
+        setAccessibilityLabel("Open workspace in Finder")
         update(path:"")
     }
     required init?(coder:NSCoder) {fatalError()}
@@ -101,7 +101,7 @@ final class WorkspaceLinkButton: NSButton,LinkCursorControl {
         displayedPath = path
         directory = path.isEmpty ? nil : URL(fileURLWithPath:path,isDirectory:true)
         isEnabled = directory != nil
-        let text = path.isEmpty ? "未选择工作区" : (path as NSString).abbreviatingWithTildeInPath
+        let text = path.isEmpty ? "No workspace selected" : (path as NSString).abbreviatingWithTildeInPath
         let paragraph = NSMutableParagraphStyle(); paragraph.lineBreakMode = .byTruncatingMiddle
         var attributes:[NSAttributedString.Key:Any] = [.font:font!, .foregroundColor:NSColor.secondaryLabelColor,.paragraphStyle:paragraph]
         if isEnabled {attributes.merge(LinkAppearance.attributes) {_,link in link}}
