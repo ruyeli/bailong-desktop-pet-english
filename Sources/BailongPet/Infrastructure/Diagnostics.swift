@@ -54,8 +54,8 @@ private struct ProcessStatistics {
             let swapinsEnd = MemoryLayout<task_vm_info_data_t>.offset(of: \.ledger_swapins)! + MemoryLayout<Int64>.size
             if Int(count) * MemoryLayout<integer_t>.size >= swapinsEnd, memory.ledger_swapins >= 0 {
                 result.swapins = UInt64(memory.ledger_swapins)
-            } else { result.memoryError = "系统未返回进程换入计数" }
-        } else { result.memoryError = "task_info 错误 \(memoryStatus)" }
+            } else { result.memoryError = "System did not return process swap-in count" }
+        } else { result.memoryError = "task_info error \(memoryStatus)" }
         var swap = xsw_usage(); var swapSize = MemoryLayout.size(ofValue: swap)
         if sysctlbyname("vm.swapusage", &swap, &swapSize, nil, 0) == 0 { result.systemSwapUsed = swap.xsu_used }
         else { result.swapError = "vm.swapusage errno \(errno)" }
@@ -75,13 +75,13 @@ private enum DeviceIdentity {
         #if arch(arm64)
         let architecture = "arm64 / Apple Silicon"
         #elseif arch(x86_64)
-        let architecture = "x86_64 / Intel 指令集"
+        let architecture = "x86_64 / Intel instruction set"
         #else
-        let architecture = "未知编译架构"
+        let architecture = "Unknown build architecture"
         #endif
         let info = ProcessInfo.processInfo
         let gpu = MTLCreateSystemDefaultDevice()
-        return "版本 \(Paths.version) · \(architecture)\n进程 \(info.processName) · PID \(info.processIdentifier)\nCPU \(systemString("machdep.cpu.brand_string") ?? "型号不可用") · \(systemString("hw.machine") ?? "架构不可用") · \(info.processorCount) 核\nGPU \(gpu?.name ?? "不可用") · \(gpu?.architecture.name ?? "架构不可用")\nmacOS \(info.operatingSystemVersionString)"
+        return "Version \(Paths.version) · \(architecture)\nProcess \(info.processName) · PID \(info.processIdentifier)\nCPU \(systemString("machdep.cpu.brand_string") ?? "Model unavailable") · \(systemString("hw.machine") ?? "Architecture unavailable") · \(info.processorCount) cores\nGPU \(gpu?.name ?? "Unavailable") · \(gpu?.architecture.name ?? "Architecture unavailable")\nmacOS \(info.operatingSystemVersionString)"
     }
 }
 
@@ -105,7 +105,7 @@ private final class FPSGraph: NSView {
         grid.stroke()
         let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 10), .foregroundColor: NSColor.secondaryLabelColor]
         "\(Int(ceiling)) FPS".draw(at: NSPoint(x: plot.minX, y: bounds.maxY - 15), withAttributes: attributes)
-        "最近 60 次采样 · 每秒一次".draw(at: NSPoint(x: plot.minX, y: 2), withAttributes: attributes)
+        "Last 60 samples · Once per second".draw(at: NSPoint(x: plot.minX, y: 2), withAttributes: attributes)
         guard !values.isEmpty else { return }
         let line = NSBezierPath(); line.lineWidth = 2
         for (index, value) in values.enumerated() {
@@ -128,8 +128,8 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
     private var fittingWindow = false
     private var closing = false
     private let identity = NSTextField(wrappingLabelWithString: DeviceIdentity.text)
-    private let playback = NSTextField(wrappingLabelWithString: "等待采样…")
-    private let resources = NSTextField(wrappingLabelWithString: "等待采样…")
+    private let playback = NSTextField(wrappingLabelWithString: "Waiting for sample…")
+    private let resources = NSTextField(wrappingLabelWithString: "Waiting for sample…")
     private let connections = NSTextField(wrappingLabelWithString: "")
     private let fpsValue = NSTextField(labelWithString: "—")
     private let highValue = NSTextField(labelWithString: "—")
@@ -138,13 +138,13 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
     private var frames = PlaybackStatistics(time: ProcessInfo.processInfo.systemUptime)
     private var previous = ProcessStatistics()
     private var previousGPU: GPUStatistics.Snapshot?
-    private var gpuStatus = "等待采样"
+    private var gpuStatus = "Waiting for sample"
     private var swapinRate: Double?
     private var sampledAt = ProcessInfo.processInfo.systemUptime
     init(pet: PetController) {
         self.pet = pet
         super.init()
-        window.title = "应用性能信息统计"; window.isReleasedWhenClosed = false; window.delegate = self
+        window.title = "App Performance Monitor"; window.isReleasedWhenClosed = false; window.delegate = self
         window.hidesOnDeactivate = false
         updatePin()
         window.isExcludedFromWindowsMenu = false
@@ -154,20 +154,20 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
         viewport.hasVerticalScroller = true; viewport.autohidesScrollers = true; viewport.drawsBackground = false
         let container = NSView(); window.contentView = container
         container.addSubview(viewport); viewport.translatesAutoresizingMaskIntoConstraints = false
-        let closeButton = ActionButton("关闭") { [weak self] in self?.window.performClose(nil) }
-        let copyButton = ActionButton("拷贝信息") {}
-        copyButton.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
+        let closeButton = ActionButton("Close") { [weak self] in self?.window.performClose(nil) }
+        let copyButton = ActionButton("Copy Information") {}
+        copyButton.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "Copy")
         copyButton.imagePosition = .imageLeading; copyButton.emphasize()
         CopyFeedback.attach(to:copyButton) { [weak self] in self?.copyInformation() }
         let actions = NSStackView(views: [closeButton, copyButton]); actions.orientation = .horizontal; actions.spacing = 8
         container.addSubview(actions); actions.translatesAutoresizingMaskIntoConstraints = false
-        let pinIcon = NSImageView(image: NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "置顶")!)
+        let pinIcon = NSImageView(image: NSImage(systemSymbolName: "pin.fill", accessibilityDescription: "Pin")!)
         pinIcon.contentTintColor = .secondaryLabelColor
         pinIcon.widthAnchor.constraint(equalToConstant: 14).isActive = true
         pinIcon.heightAnchor.constraint(equalToConstant: 14).isActive = true
-        let pinLabel = NSTextField(labelWithString: "置顶显示"); pinLabel.font = .systemFont(ofSize: 12)
+        let pinLabel = NSTextField(labelWithString: "Keep on top"); pinLabel.font = .systemFont(ofSize: 12)
         pinSwitch.controlSize = .small; pinSwitch.target = self; pinSwitch.action = #selector(togglePin)
-        pinSwitch.setAccessibilityLabel("置顶显示")
+        pinSwitch.setAccessibilityLabel("Keep on top")
         let pinControls = NSStackView(views: [pinIcon, pinLabel, pinSwitch])
         pinControls.orientation = .horizontal; pinControls.alignment = .centerY; pinControls.spacing = 6
         container.addSubview(pinControls); pinControls.translatesAutoresizingMaskIntoConstraints = false
@@ -226,7 +226,7 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
             sampledAt = ProcessInfo.processInfo.systemUptime; frames = PlaybackStatistics(time: sampledAt)
             previous = ProcessStatistics.read(); swapinRate = nil; graph.values.removeAll(); graph.needsDisplay = true
             switch GPUStatistics.read() {
-            case .success(let snapshot): previousGPU = snapshot; gpuStatus = "等待采样"
+            case .success(let snapshot): previousGPU = snapshot; gpuStatus = "Waiting for sample"
             case .failure(let error): previousGPU = nil; gpuStatus = error.message
             }
             placeTopLeft(); updateText(fps: nil, draws: nil, cpu: nil, gpu: nil, process: previous)
@@ -294,8 +294,8 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
         case .success(let snapshot):
             if let last = previousGPU, last.coalition == snapshot.coalition, snapshot.nanoseconds >= last.nanoseconds {
                 gpu = Double(snapshot.nanoseconds - last.nanoseconds) / 1_000_000_000 / elapsed * 100
-                gpuStatus = "应用组 \(snapshot.coalition)"
-            } else { gpuStatus = "重新建立采样基线" }
+                gpuStatus = "App group \(snapshot.coalition)"
+            } else { gpuStatus = "Re-establish sampling baseline" }
             previousGPU = snapshot
         case .failure(let error): previousGPU = nil; gpuStatus = error.message
         }
@@ -313,33 +313,33 @@ final class DiagnosticsPanel: NSObject, NSWindowDelegate {
         let count = pet.animation?.frameCount ?? 0
         let index = pet.animation?.stream?.current?.index ?? pet.frameIndex
         let resolution = pet.currentFrame?.image.width ?? pet.preferences.animationResolution
-        let limit = pet.preferences.string("animationFPSLimit") == "full" ? "满帧 (≥ 24 FPS)" : pet.preferences.string("animationFPSLimit") + " FPS"
-        let state = pet.hidden ? "隐藏" : pet.loading ? "解码中" : pet.press != nil && !pet.dragged ? "暂停" : "播放"
+        let limit = pet.preferences.string("animationFPSLimit") == "full" ? "Full frame rate (≥ 24 FPS)" : pet.preferences.string("animationFPSLimit") + " FPS"
+        let state = pet.hidden ? "Hide" : pet.loading ? "Decoding" : pet.press != nil && !pet.dragged ? "Paused" : "Play"
         let preloadEnabled = pet.preferences.bool("preloadWholeAnimation")
-        playback.stringValue = "\(preloadEnabled ? "整段预加载" : "流式播放") · \(pet.current.title) · \(state) · \(String(format: "%.2f", pet.playbackRate))×\n画质 \(resolution)×\(resolution) · 上限 \(limit)\n帧 \(count == 0 ? 0 : index + 1)/\(count) · 累计 \(frames.total) · 绘制 \(number(draws))/s"
+        playback.stringValue = "\(preloadEnabled ? "Preload entire clip" : "Streaming") · \(pet.current.title) · \(state) · \(String(format: "%.2f", pet.playbackRate))×\nQuality \(resolution)×\(resolution) · Limit \(limit)\nFrame \(count == 0 ? 0 : index + 1)/\(count) · Total \(frames.total) · Draws \(number(draws))/s"
         let cache = pet.decoder.residentFrameStatistics()
         let preloadText: String
         if preloadEnabled {
             if let progress = pet.decoder.preloadingStatistics() {
                 let title = pet.catalog.all.first { $0.id == progress.id }?.title ?? progress.id
-                preloadText = "整段预加载：\(title) · \(progress.frames)/\(progress.total) 帧"
+                preloadText = "Full preload: \(title) · \(progress.frames)/\(progress.total) frames"
             } else if pet.loading {
-                preloadText = "整段预加载：准备中"
+                preloadText = "Full preload: preparing"
             } else {
-                preloadText = "整段预加载：\(pet.current.title) · \(count) 帧"
+                preloadText = "Full preload: \(pet.current.title) · \(count) frames"
             }
         } else if let stream = pet.animation?.stream {
             let buffer = stream.statistics()
-            preloadText = "流式缓冲 \(buffer.buffered)/\(stream.capacity) 帧\n整段预加载：关闭"
+            preloadText = "Stream buffer \(buffer.buffered)/\(stream.capacity) frames\nFull preload: off"
         } else {
-            preloadText = "流式缓冲：准备中"
+            preloadText = "Stream buffer: preparing"
         }
-        let swapinText = process.swapins.map { $0 > 0 ? "累计 \(bytes($0))" : "未观察到换入" } ?? "不可用"
+        let swapinText = process.swapins.map { $0 > 0 ? "Total \(bytes($0))" : "No swap-in observed" } ?? "Unavailable"
         let swapRateText = swapinRate.map { " · \(bytes(UInt64($0.rounded())))/s" } ?? ""
-        resources.stringValue = "CPU 总体 \(number(cpu.map { $0 / Double(ProcessInfo.processInfo.processorCount) }))% · 单核基准 \(number(cpu))%\n运行内存 (RAM) \(process.footprint.map(bytes) ?? "不可用")\nGPU（应用组）\(gpu.map { String(format: "%.2f%%", $0) } ?? gpuStatus)\n本进程压缩 \(process.compressed.map(bytes) ?? "不可用") · 系统 Swap \(process.systemSwapUsed.map(bytes) ?? "不可用")\n本进程 Swap-in：\(swapinText)\(swapRateText)\n帧缓存 \(bytes(UInt64(cache.bytes))) · \(cache.clips) 段 / \(cache.frames) 帧\n\(preloadText)\n动画磁盘缓存 0 B"
+        resources.stringValue = "CPU overall \(number(cpu.map { $0 / Double(ProcessInfo.processInfo.processorCount) }))% · Single-core basis \(number(cpu))%\nMemory (RAM) \(process.footprint.map(bytes) ?? "Unavailable")\nGPU (app group) \(gpu.map { String(format: "%.2f%%", $0) } ?? gpuStatus)\nProcess compressed memory \(process.compressed.map(bytes) ?? "Unavailable") · System Swap \(process.systemSwapUsed.map(bytes) ?? "Unavailable")\nProcess Swap-in: \(swapinText)\(swapRateText)\nFrame cache \(bytes(UInt64(cache.bytes))) · \(cache.clips) clips / \(cache.frames) frames\n\(preloadText)\nAnimation disk cache 0 B"
         let desktop = NSWorkspace.shared.runningApplications.filter { ["com.openai.codex", "com.openai.chat"].contains($0.bundleIdentifier ?? "") }
-        let desktopText = desktop.isEmpty ? "未运行" : desktop.map { "\($0.localizedName ?? "桌面应用") · PID \($0.processIdentifier)" }.joined(separator: "、")
-        connections.stringValue = "桌面端  \(desktopText)\n只读同步  \(pet.syncDiagnostics())\nCLI  \(pet.cliDiagnostics())"
+        let desktopText = desktop.isEmpty ? "Not running" : desktop.map { "\($0.localizedName ?? "Desktop app") · PID \($0.processIdentifier)" }.joined(separator: ", ")
+        connections.stringValue = "Desktop  \(desktopText)\nRead-only sync  \(pet.syncDiagnostics())\nCLI  \(pet.cliDiagnostics())"
         fitToContent()
     }
     private func copyInformation() -> String {
