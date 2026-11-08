@@ -12,27 +12,27 @@ final class WorkspaceSettingsPage:NSObject {
     }
     func render() {
         let directory = form.preferences.defaultWorkspace
-        let open = ActionButton("在访达中打开") {FinderFileReveal.openDirectory(directory)}
-        let choose = ActionButton("选择目录…") { [weak self] in self?.chooseDirectory() }
+        let open = ActionButton("Open in Finder") {FinderFileReveal.openDirectory(directory)}
+        let choose = ActionButton("Choose Folder…") { [weak self] in self?.chooseDirectory() }
         let actions = NSStackView(views:[open,choose]); actions.spacing = 8; actions.distribution = .fill
-        let restore = ActionButton("恢复内置目录") { [weak self] in
+        let restore = ActionButton("Restore Built-in Folder") { [weak self] in
             guard let self else {return}
             self.form.preferences.reset(["defaultWorkspace"]); self.reload()
         }
         restore.isEnabled = !form.preferences.string("defaultWorkspace").isEmpty
-        let cleanup = SettingsFooterButton(title:clearing ? "正在清理…" : "清理…",target:self,action:#selector(confirmClear))
+        let cleanup = SettingsFooterButton(title:clearing ? "Cleaning…" : "Clean…",target:self,action:#selector(confirmClear))
         cleanup.bezelStyle = .rounded; cleanup.hasDestructiveAction = true; cleanup.isEnabled = !clearing
-        form.group("桌宠对话默认工作区",[
-            form.row("默认工作区",detail:directory.path,control:actions),
-            form.note("“在默认工作区新建”使用此目录；已有会话保留各自的工作区，更改目录不搬移文件。"),
-            form.row("恢复内置工作区",control:restore),
-            form.row("清理内置工作区",detail:"仅将下方内置目录的内容移到废纸篓，保留目录和聊天记录。自定义工作区不清理。\n"+LocalStorage.workspace.path,control:cleanup)
+        form.group("Default workspace for pet chats",[
+            form.row("Default workspace",detail:directory.path,control:actions),
+            form.note("New chats in the default workspace use this folder. Existing chats retain their own workspaces. Changing this setting does not move files."),
+            form.row("Restore built-in workspace",control:restore),
+            form.row("Clean built-in workspace",detail:"Only the contents of the built-in folder below are moved to Trash. The folder and chat history remain. Custom workspaces are not cleaned.\n"+LocalStorage.workspace.path,control:cleanup)
         ])
     }
     private func chooseDirectory() {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false; panel.canCreateDirectories = true
-        panel.directoryURL = form.preferences.defaultWorkspace; panel.prompt = "设为默认工作区"
+        panel.directoryURL = form.preferences.defaultWorkspace; panel.prompt = "Set as Default Workspace"
         PanelPresentation.present(panel,relativeTo:window) { [weak self] response in
             guard let self,response == .OK,let directory = panel.url else {return}
             let path = directory.standardizedFileURL.path
@@ -44,17 +44,17 @@ final class WorkspaceSettingsPage:NSObject {
         guard !clearing else {return}
         window.makeFirstResponder(nil)
         let alert = NSAlert(); alert.alertStyle = .warning
-        alert.messageText = "清理内置工作区？"
-        alert.informativeText = "将此目录中的全部文件和子文件夹移到废纸篓，包括隐藏文件。保留目录和聊天记录；历史中的文件链接将无法在原位置打开。\n\n"+LocalStorage.workspace.path
-        alert.addButton(withTitle:"取消")
-        alert.addButton(withTitle:"移到废纸篓").hasDestructiveAction = true
+        alert.messageText = "Clean the built-in workspace?"
+        alert.informativeText = "Move all files and subfolders here to Trash, including hidden files. Keep the folder and chat history. File links in history will no longer open at their original locations.\n\n"+LocalStorage.workspace.path
+        alert.addButton(withTitle:"Cancel")
+        alert.addButton(withTitle:"Move to Trash").hasDestructiveAction = true
         alert.beginDangerousSheet(for:window) { [weak self] response in
             guard let self,response == .alertSecondButtonReturn else {return}
             self.clearing = true; self.reload()
             self.clear { [weak self] result in
                 guard let self else {return}
                 self.clearing = false; self.reload()
-                if case .failure(let error) = result {showError("工作区清理未完成",error)}
+                if case .failure(let error) = result {showError("Workspace cleanup incomplete",error)}
             }
         }
     }

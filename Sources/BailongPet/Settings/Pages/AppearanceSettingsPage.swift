@@ -29,9 +29,9 @@ final class AppearanceSettingsPage {
         }
     }
     func render() {
-        form.group("大小",[form.slider("桌宠大小","petPercent",range:50...200,suffix:"%"),form.slider("气泡大小","bubblePercent",range:50...150,suffix:"%"),form.slider("消息文字大小","messageFontSize",range:11...20,suffix:"pt")])
-        form.group("桌宠轮廓",[form.toggle("轮廓阴影","petShadow",detail:"在桌宠轮廓外显示柔和阴影。")])
-        form.group("气泡形状",[form.toggle("自定义宽高比","bubbleAspectEnabled"),form.slider("宽 : 高","bubbleAspectRatio",range:0.6...3,step:0.1,suffix:": 1",requires:["bubbleAspectEnabled"])])
+        form.group("Size",[form.slider("Pet size","petPercent",range:50...200,suffix:"%"),form.slider("Bubble size","bubblePercent",range:50...150,suffix:"%"),form.slider("Message font size","messageFontSize",range:11...20,suffix:"pt")])
+        form.group("Pet outline",[form.toggle("Outline shadow","petShadow",detail:"Show a soft shadow around the pet.")])
+        form.group("Bubble shape",[form.toggle("Custom aspect ratio","bubbleAspectEnabled"),form.slider("Width : Height","bubbleAspectRatio",range:0.6...3,step:0.1,suffix:": 1",requires:["bubbleAspectEnabled"])])
         let palette = NSStackView(); palette.spacing = 3; palette.alignment = .top
         for (key,name) in AppAccent.choices {
             let dot = AccentSwatch(key:key,name:name)
@@ -49,42 +49,42 @@ final class AppearanceSettingsPage {
             caption.widthAnchor.constraint(equalTo:column.widthAnchor).isActive = true
             palette.addArrangedSubview(column); accentButtons.append(dot); accentNames.append(caption)
         }
-        var themeRows = [form.segmented("外观模式","appearanceMode",AppAppearance.choices,symbols:["system":"circle.lefthalf.filled","light":"sun.max","dark":"moon"]),form.row("强调色",control:palette)]
+        var themeRows = [form.segmented("Appearance mode","appearanceMode",AppAppearance.choices,symbols:["system":"circle.lefthalf.filled","light":"sun.max","dark":"moon"]),form.row("Accent color",control:palette)]
         if preferences.string("accentStyle") == "custom" {
             let well = CenteredColorWell(); well.color = AppAccent.color; well.widthAnchor.constraint(equalToConstant:70).isActive = true
             form.attach(well) { [weak self] sender in guard let rgb = (sender as! NSColorWell).color.usingColorSpace(.sRGB) else {return}; self?.preferences.set([rgb.redComponent,rgb.greenComponent,rgb.blueComponent],for:"accentRGB") }
-            themeRows.append(form.row("自定义",control:well))
+            themeRows.append(form.row("Custom",control:well))
         }
-        form.group("主题",themeRows)
-        let material = form.segmented("消息窗口材质","bubbleMaterial",[("glass","液态玻璃"),("plain","普通材质")],value:preferences.usesGlass ? "glass" : "plain",enabled:PetPreferences.glassAvailable,detail:"macOS 26 起支持液态玻璃材质。") { [weak self] in self?.reload(); self?.showPreview() }
+        form.group("Theme",themeRows)
+        let material = form.segmented("Message window material","bubbleMaterial",[("glass","Liquid Glass"),("plain","Plain")],value:preferences.usesGlass ? "glass" : "plain",enabled:PetPreferences.glassAvailable,detail:"Liquid Glass requires macOS 26 or later.") { [weak self] in self?.reload(); self?.showPreview() }
         var materialRows = [material]
         if preferences.usesGlass {
             let follow = AccentSwitch(); follow.state = preferences.bool("glassFollowsSystem") ? .on : .off; glassFollowSwitch = follow
-            follow.setAccessibilityLabel("液态玻璃跟随系统设定")
+            follow.setAccessibilityLabel("Use system Liquid Glass settings")
             form.attach(follow) { [weak self] sender in self?.preferences.set((sender as! NSSwitch).state == .on,for:"glassFollowsSystem"); self?.showPreview() }
-            materialRows.append(form.row("液态玻璃跟随系统设定",control:follow))
+            materialRows.append(form.row("Use system Liquid Glass settings",control:follow))
             let slider = GlassOpacitySlider(); slider.minValue = 0; slider.maxValue = 1; slider.doubleValue = preferences.number("glassOpacity")
             slider.numberOfTickMarks = 5; slider.allowsTickMarkValuesOnly = false; slider.isContinuous = true
             slider.trackFillColor = AppAccent.color; slider.widthAnchor.constraint(equalToConstant:180).isActive = true
-            slider.setAccessibilityLabel("玻璃不透明度"); slider.isEnabled = !preferences.bool("glassFollowsSystem"); glassSlider = slider
+            slider.setAccessibilityLabel("Glass opacity"); slider.isEnabled = !preferences.bool("glassFollowsSystem"); glassSlider = slider
             form.attach(slider) { [weak self] sender in self?.preferences.set((sender as! NSSlider).doubleValue,for:"glassOpacity"); self?.showPreview() }
             slider.ended = { [weak self] in self?.schedulePreviewDismissal() }
             let left = glassSymbol(filled:false), right = glassSymbol(filled:true)
             let controls = NSStackView(views:[left,slider,right]); controls.spacing = 8; controls.alignment = .centerY
             controls.widthAnchor.constraint(equalToConstant:244).isActive = true
             controls.alphaValue = slider.isEnabled ? 1 : 0.45; glassControls = [controls]
-            materialRows.append(form.row("玻璃不透明度",control:controls))
+            materialRows.append(form.row("Glass opacity",control:controls))
         }
-        materialRows.append(form.toggle("动态效果","bubbleMotion"))
-        materialRows.append(form.row("气泡效果",control:ActionButton("预览气泡") { [weak self] in self?.showPreview() }))
-        form.group("消息窗口",materialRows)
+        materialRows.append(form.toggle("Motion effects","bubbleMotion"))
+        materialRows.append(form.row("Bubble effects",control:ActionButton("Preview Bubble") { [weak self] in self?.showPreview() }))
+        form.group("Message windows",materialRows)
     }
     private func glassSymbol(filled:Bool) -> NSImageView {
         let name = "capsule.on.rectangle.liquid.glass" + (filled ? ".fill" : "")
         let image = NSImage(systemSymbolName:name,accessibilityDescription:nil) ?? NSImage(contentsOf:Paths.resources.appendingPathComponent("glass-symbols/"+name+".pdf"))
         image?.isTemplate = true
         let view = NSImageView(); view.image = image; view.contentTintColor = .secondaryLabelColor
-        view.setAccessibilityLabel(filled ? "更不透明" : "更通透")
+        view.setAccessibilityLabel(filled ? "More opaque" : "More transparent")
         view.widthAnchor.constraint(equalToConstant:24).isActive = true; view.heightAnchor.constraint(equalToConstant:24).isActive = true
         return view
     }

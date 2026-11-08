@@ -2,43 +2,43 @@ import AppKit
 
 enum MessageSettingsPage {
     static func render(form:SettingsForm,onPreview:@escaping (MessagePurpose) -> Void) {
-        form.group("历史记录",[form.toggle("记录历史","recordHistory",detail:"关闭后停止新增和更新本机历史，已有记录保留。当前任务上下文暂留运行内存 (RAM)，重新开启不补写关闭期间的内容。Codex 原有记录不受此开关影响。")])
-        form.group("气泡窗审批",[form.choice("气泡窗审批按钮顺序","approvalButtonOrder",[("rejectLeft","左拒绝 · 右允许"),("allowLeft","左允许 · 右拒绝")],detail:"仅改变桌宠气泡窗中的审批按钮位置，不改变原生审批对话框或 Codex 界面。红叉表示拒绝，绿对钩表示允许；键盘按键不触发审批。")])
-        form.group("输入快捷键",[
-            form.choice("发送与换行","sendShortcut",SendShortcut.options),
+        form.group("History",[form.toggle("Save history","recordHistory",detail:"Stops adding or updating local history while retaining existing records. Current task context stays in memory (RAM). Re-enabling does not backfill this period. Original Codex history is unaffected.")])
+        form.group("In-bubble approvals",[form.choice("Approval button order","approvalButtonOrder",[("rejectLeft","Deny left · Allow right"),("allowLeft","Allow left · Deny right")],detail:"Changes only the approval button order in pet bubbles, not native approval dialogs or Codex. A red cross means deny; a green check means allow. Keyboard keys do not approve requests.")])
+        form.group("Input shortcut",[
+            form.choice("Sending & new lines","sendShortcut",SendShortcut.options),
             form.note(SendShortcut.settingsExplanation)])
-        form.group("任务气泡",[
-            form.toggle("显示任务气泡","taskBubbles",detail:"控制任务消息、最终回复和思考与工具进展小气泡。审批、补充输入和失败提示仍会显示。"),
-            form.toggle("任务消息","progressBubbles",detail:"显示执行中的助手消息。",requires:["taskBubbles"]),
-            form.toggle("最终回复","resultBubbles",requires:["taskBubbles"]),
-            form.toggle("思考与工具进展小气泡","progressToastEnabled",detail:"任务消息开启时，思考摘要或工具状态变化会自动弹出短气泡。",requires:["taskBubbles","progressBubbles"])])
-        form.group("进展提醒",[
-            form.toggle("久无进展时提醒","taskReminderEnabled",detail:"连续 90 秒没有新进展，且距上次消息达到提醒间隔时显示。等待回答、批准或正在停止时不提醒。",requires:["taskBubbles","progressBubbles"]),
-            form.slider("提醒间隔","taskReminderMinutes",range:1...30,suffix:"分钟",requires:["taskBubbles","progressBubbles","taskReminderEnabled"])])
-        form.group("显示哪些消息",[
-            form.toggle("互动台词","interactionBubbles"),
-            form.toggle("显示思考摘要","showThinkingProgress",detail:"在任务概览和进展小气泡中显示公开思考摘要，不计入气泡记录。"),
-            form.toggle("显示工具调用","showToolProgress",detail:"在任务概览和进展小气泡中显示工具名称、操作和执行状态，不计入气泡记录。")])
-        form.group("气泡卡片与任务概览",[
-            form.slider("气泡卡片保留数量","bubbleCardLimit",range:5...100,suffix:"条"),
-            form.toggle("互动气泡显示任务概览","showTaskOverview",detail:"通过按键执行“显示任务进度、播放随机动画”时，在台词下显示当前与近期结束任务；点击任务行跳转 Codex。"),
-            form.slider("近期结束任务数量","recentTaskCount",range:1...20,suffix:"条",detail:"每个会话显示最新轮次。",requires:["showTaskOverview"])])
-        form.group("停留时间",[
-            form.slider("互动台词","interactionSeconds",range:0...60,suffix:"秒",requires:["interactionBubbles"]),
-            form.slider("任务消息","progressSeconds",range:0...60,suffix:"秒",requires:["taskBubbles","progressBubbles"]),
-            form.slider("最终回复","resultSeconds",range:0...120,suffix:"秒",requires:["taskBubbles","resultBubbles"]),
-            form.slider("额度信息","quotaSeconds",range:0...120,suffix:"秒"),
-            form.note("设为 0 秒表示手动关闭。审批、补充输入和失败提示保留到处理或手动关闭。"),
-            form.toggle("长回复自动延长阅读时间","autoReadTime",detail:"最多延长到 120 秒；手动关闭模式不受影响。",requires:["taskBubbles","resultBubbles"]),
-            form.toggle("鼠标移入时暂停倒计时","pauseOnHover"),
-            form.slider("思考与工具进展小气泡","progressToastSeconds",range:1...10,suffix:"秒",detail:"默认 2 秒，内容更新后重新计时。",requires:["taskBubbles","progressBubbles","progressToastEnabled"]),
-            form.row("预览最终回复气泡",control:ActionButton("预览…") {onPreview(.result)})])
-        form.group("声音",[form.toggle("播放音效","soundEnabled")])
-        form.group("安静陪伴",[
-            form.toggle("立即开启安静陪伴","quietCompanion",detail:"减少自主活动、停止自动移动，关闭互动台词、进展气泡和音效。最终回复与待处理通知保留。"),
-            form.toggle("定时开启安静陪伴","quietSchedule",detail:"立即开启时始终保持安静；关闭立即开启后，按设定时段生效。"),
-            form.time("开始时间","quietStart",requires:["quietSchedule"]),
-            form.time("结束时间","quietEnd",requires:["quietSchedule"]),
-            form.note("按本机时间生效，支持跨午夜；起止相同表示全天。")])
+        form.group("Task bubbles",[
+            form.toggle("Show task bubbles","taskBubbles",detail:"Controls task messages, final replies, and thinking/tool progress pop-ups. Approvals, input requests, and failures remain visible."),
+            form.toggle("Task messages","progressBubbles",detail:"Show assistant messages while a task runs.",requires:["taskBubbles"]),
+            form.toggle("Final replies","resultBubbles",requires:["taskBubbles"]),
+            form.toggle("Thinking & tool progress pop-ups","progressToastEnabled",detail:"When task messages are enabled, changes to thinking summaries or tool status show a brief pop-up.",requires:["taskBubbles","progressBubbles"])])
+        form.group("Progress reminders",[
+            form.toggle("Remind me when progress stalls","taskReminderEnabled",detail:"Show a reminder after 90 seconds without progress and once the reminder interval has elapsed. No reminders while waiting for input, approval, or stopping.",requires:["taskBubbles","progressBubbles"]),
+            form.slider("Reminder interval","taskReminderMinutes",range:1...30,suffix:"minutes",requires:["taskBubbles","progressBubbles","taskReminderEnabled"])])
+        form.group("Message types",[
+            form.toggle("Interaction lines","interactionBubbles"),
+            form.toggle("Show thinking summaries","showThinkingProgress",detail:"Show public thinking summaries in task overview and progress pop-ups, without adding message cards."),
+            form.toggle("Show tool calls","showToolProgress",detail:"Show tool names, operations, and status in task overview and progress pop-ups, without adding message cards.")])
+        form.group("Message cards & task overview",[
+            form.slider("Message cards to keep","bubbleCardLimit",range:5...100,suffix:"items"),
+            form.toggle("Show task overview with interactions","showTaskOverview",detail:"The task-progress mouse action lists current and recent tasks below the dialogue. Click a task to open it in Codex."),
+            form.slider("Recent completed tasks","recentTaskCount",range:1...20,suffix:"items",detail:"Show the latest turn from each chat.",requires:["showTaskOverview"])])
+        form.group("Display duration",[
+            form.slider("Interaction lines","interactionSeconds",range:0...60,suffix:"seconds",requires:["interactionBubbles"]),
+            form.slider("Task messages","progressSeconds",range:0...60,suffix:"seconds",requires:["taskBubbles","progressBubbles"]),
+            form.slider("Final replies","resultSeconds",range:0...120,suffix:"seconds",requires:["taskBubbles","resultBubbles"]),
+            form.slider("Usage information","quotaSeconds",range:0...120,suffix:"seconds"),
+            form.note("Set to 0 for manual closing. Approvals, input requests, and failures stay until handled or closed manually."),
+            form.toggle("Allow more reading time for long replies","autoReadTime",detail:"Extend up to 120 seconds. Manual-close mode is unaffected.",requires:["taskBubbles","resultBubbles"]),
+            form.toggle("Pause countdown on hover","pauseOnHover"),
+            form.slider("Thinking & tool progress pop-ups","progressToastSeconds",range:1...10,suffix:"seconds",detail:"Default: 2 seconds. Restarts when the content changes.",requires:["taskBubbles","progressBubbles","progressToastEnabled"]),
+            form.row("Preview final reply bubble",control:ActionButton("Preview…") {onPreview(.result)})])
+        form.group("Sound",[form.toggle("Play sound effects","soundEnabled")])
+        form.group("Quiet companionship",[
+            form.toggle("Enable quiet companionship now","quietCompanion",detail:"Reduce activity, stop autonomous movement, and turn off interaction lines, progress bubbles, and sounds. Final replies and pending requests remain visible."),
+            form.toggle("Schedule quiet companionship","quietSchedule",detail:"Enable now keeps the pet quiet continuously. Turn it off to use the schedule."),
+            form.time("Start time","quietStart",requires:["quietSchedule"]),
+            form.time("End time","quietEnd",requires:["quietSchedule"]),
+            form.note("Uses local time and supports overnight schedules. Equal start and end times mean all day.")])
     }
 }
