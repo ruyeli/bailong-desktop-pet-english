@@ -18,12 +18,12 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         reload:{ [weak self] in self?.render() },onPreview:{ [weak self] in self?.onPreview($0) })
     private let aboutPage = AboutPageController()
     private lazy var workspacePage = WorkspaceSettingsPage(form:form,window:window,reload:{ [weak self] in self?.render() },clear:{ [weak self] completion in
-        guard let action = self?.onClearDefaultWorkspace else {completion(.failure(PetFailure(message:"会话管理尚未就绪，无法清理工作区。"))); return}
+        guard let action = self?.onClearDefaultWorkspace else {completion(.failure(PetFailure(message:"Conversation management is not ready. The workspace cannot be cleaned."))); return}
         action(completion)
     })
     private let splitController = NSSplitViewController()
     private let sidebar = NSTableView(), scroll = NSScrollView(), content = NSStackView()
-    private let resetButton = SettingsFooterButton(title:"恢复本页设置为默认值",target:nil,action:nil)
+    private let resetButton = SettingsFooterButton(title:"Reset this page to defaults",target:nil,action:nil)
     private weak var updateStatusLabel: NSTextField?
     private weak var updateTimeLabel: NSTextField?
     private let searchField = NSSearchField()
@@ -50,7 +50,7 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         self.preferences = preferences; self.catalog = catalog
         super.init()
         NotificationCenter.default.addObserver(self,selector:#selector(startupRegistrationChanged),name:FollowLauncher.didChange,object:nil)
-        window.title = "设置"; window.isReleasedWhenClosed = false; window.delegate = self
+        window.title = "Settings"; window.isReleasedWhenClosed = false; window.delegate = self
         window.styleMask.insert(.fullSizeContentView)
         window.collectionBehavior.insert(.fullScreenNone)
         window.minSize = NSSize(width:800,height:540)
@@ -71,7 +71,7 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         column.minWidth = 0; column.resizingMask = .autoresizingMask
         sideScroll.hasHorizontalScroller = false; sideScroll.horizontalScrollElasticity = .none
         sidebar.dataSource = self; sidebar.delegate = self; sidebar.allowsEmptySelection = false
-        sidebar.setAccessibilityLabel("设置分类"); sideScroll.documentView = sidebar
+        sidebar.setAccessibilityLabel("Settings categories"); sideScroll.documentView = sidebar
         side.addSubview(sideScroll)
         scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.drawsBackground = false
         let detail = NSView(), document = TopDownView(); scroll.documentView = document; detail.addSubview(scroll)
@@ -92,12 +92,12 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         content.orientation = .vertical; content.alignment = .leading; content.spacing = 24
         document.addSubview(content)
         resetButton.target = self; resetButton.action = #selector(restorePage); resetButton.focusRingType = .exterior
-        let resetAll = SettingsFooterButton(title:"恢复全部设置为默认值",target:self,action:#selector(restoreAll))
+        let resetAll = SettingsFooterButton(title:"Reset all settings to defaults",target:self,action:#selector(restoreAll))
         resetAll.bezelStyle = .rounded; resetAll.hasDestructiveAction = true
         resetAll.focusRingType = .exterior
-        let closeButton = SettingsFooterButton(title:"关闭",target:window,action:#selector(NSWindow.performClose(_:)))
+        let closeButton = SettingsFooterButton(title:"Close",target:window,action:#selector(NSWindow.performClose(_:)))
         closeButton.focusRingType = .exterior
-        closeButton.setAccessibilityLabel("关闭设置窗口")
+        closeButton.setAccessibilityLabel("Close settings window")
         let footerLine = NSBox(); footerLine.boxType = .separator
         let sidebarFooter = NSStackView(views:[footerLine,resetButton,resetAll,closeButton])
         sidebarFooter.orientation = .vertical; sidebarFooter.spacing = 8; sidebarFooter.alignment = .leading
@@ -177,16 +177,16 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
     func toolbar(_ toolbar: NSToolbar,itemForItemIdentifier id: NSToolbarItem.Identifier,willBeInsertedIntoToolbar: Bool) -> NSToolbarItem? {
         if id.rawValue == "settings-search" {
             let item = NSSearchToolbarItem(itemIdentifier:id)
-            searchField.placeholderString = "搜索设置"; searchField.setAccessibilityLabel("搜索具体设置项")
+            searchField.placeholderString = "Search settings"; searchField.setAccessibilityLabel("Search individual settings")
             searchField.sendsSearchStringImmediately = true; searchField.delegate = self
             searchField.target = self; searchField.action = #selector(searchSettings)
-            item.searchField = searchField; item.label = "搜索设置"; item.preferredWidthForSearchField = 240
+            item.searchField = searchField; item.label = "Search settings"; item.preferredWidthForSearchField = 240
             searchItem = item
             return item
         }
         if id.rawValue == "settings-divider" {return NSTrackingSeparatorToolbarItem(identifier:id,splitView:splitController.splitView,dividerIndex:0)}
         guard id.rawValue == "settings-sidebar" else {return nil}
-        let item = NSToolbarItem(itemIdentifier:id); item.label = "显示或隐藏侧栏"
+        let item = NSToolbarItem(itemIdentifier:id); item.label = "Show or hide sidebar"
         item.image = NSImage(systemSymbolName:"sidebar.left",accessibilityDescription:item.label)
         item.target = splitController; item.action = #selector(NSSplitViewController.toggleSidebar(_:)); item.isBordered = true; item.installHoverHelp()
         return item
@@ -202,7 +202,7 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         scroll.isHidden = searching || selected == .about
         aboutPage.view.isHidden = searching || selected != .about
         resetButton.isEnabled = !searching && !selected.keys.isEmpty
-        window.title = searching ? "搜索设置" : selected.title
+        window.title = searching ? "Search settings" : selected.title
     }
     private func clearSearch() {
         searchField.stringValue = ""; searchResults.show([]); updateSearchPresentation()
@@ -219,7 +219,7 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
     private func revealSetting(_ entry:SettingsSearchEntry) {
         window.makeFirstResponder(nil); select(entry.section)
         if entry.section == .about {
-            aboutPage.selectTab(entry.title == "关于" ? "about" : "credits")
+            aboutPage.selectTab(entry.title == "About" ? "about" : "credits")
             return
         }
         window.contentView?.layoutSubtreeIfNeeded()
@@ -269,37 +269,37 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
         case .updates: updates()
         case .about: break
         case .developer:
-            form.group("动画", [form.choice("画质", "animationQuality", [("720", "原画\t720×720"), ("512", "较高\t512×512"), ("384", "中\t384×384"), ("256", "低\t256×256")]),
-                form.choice("素材帧率上限", "animationFPSLimit", [("full", "满帧 (≥ 24 FPS)"), ("20", "20 FPS"), ("15", "15 FPS")]),
+            form.group("Animations", [form.choice("Quality", "animationQuality", [("720", "Original\t720×720"), ("512", "High\t512×512"), ("384", "Medium\t384×384"), ("256", "Low\t256×256")]),
+                form.choice("Animation frame rate limit", "animationFPSLimit", [("full", "Full frame rate (≥ 24 FPS)"), ("20", "20 FPS"), ("15", "15 FPS")]),
                 form.bufferFrames(),
-                form.toggle("整段动画预加载", "preloadWholeAnimation", detail: "不推荐开启。播放前提前加载完整动画，但会大幅增加运行内存 (RAM) 占用。")])
-            form.group("应用统计", [form.toggle("开启应用性能信息统计浮窗", "showDiagnostics")])
+                form.toggle("Preload entire animations", "preloadWholeAnimation", detail: "Loads the entire animation before playback and substantially increases memory (RAM) use. Not recommended.")])
+            form.group("App statistics", [form.toggle("Show floating performance monitor", "showDiagnostics")])
         }
         scroll.contentView.scroll(to:.zero)
         updateSearchPresentation()
     }
     private func general() {
         if let notice = preferences.compatibilityNotice ?? SettingsStorage.compatibilityNotice {
-            form.group("配置兼容",[form.note(notice),form.row("兼容备份",control:ActionButton("导出…") { [weak self] in self?.exportCompatibilitySettings() })])
+            form.group("Settings compatibility",[form.note(notice),form.row("Compatibility record",control:ActionButton("Export…") { [weak self] in self?.exportCompatibilitySettings() })])
         }
         let login = SMAppService.mainApp.status
         let loginText = LoginLauncher.statusText
-        form.group("启动",[
-            form.row("登录时启动",detail:loginText,control:ActionButton(login == .enabled ? "停用…" : login == .requiresApproval ? "打开登录项…" : "启用…") { [weak self] in self?.configureLogin() }),
-            form.row("随 Codex 启动",detail:FollowLauncher.statusText,control:ActionButton("配置…") { [weak self] in FollowLauncher.configure(); self?.render() }),
-            form.toggle("启动后显示桌宠","showOnLaunch"),form.toggle("记住上次位置","rememberPosition")])
-        form.group("权限与系统设置",[
-            form.row("访达自动化",detail:"恢复目标文件所在的最小化访达窗口，并选中文件。",control:FinderPermissionControl(frame:.zero)),
-            form.row("文件与文件夹",detail:"访问文稿、桌面、下载等受保护目录时，由系统按需请求。按目录管理，无统一授权状态。",control:ActionButton("系统设置…") {SystemPermissionSettings.open("Privacy_FilesAndFolders")}),
-            form.row("登录项与后台运行",detail:"管理登录启动及随 Codex 启动；启用状态见上方“启动”。",control:ActionButton("打开登录项…") {SMAppService.openSystemSettingsLoginItems()}),
-            form.note("本应用不要求辅助功能、输入监控、屏幕录制、摄像头、麦克风或完全磁盘访问权限。")])
-        var displays = [("","跟随当前屏幕")] + NSScreen.screens.map {(PetPreferences.displayID($0),$0.localizedName)}
+        form.group("Startup",[
+            form.row("Launch at login",detail:loginText,control:ActionButton(login == .enabled ? "Disable…" : login == .requiresApproval ? "Open Login Items…" : "Enable…") { [weak self] in self?.configureLogin() }),
+            form.row("Launch with Codex",detail:FollowLauncher.statusText,control:ActionButton("Configure…") { [weak self] in FollowLauncher.configure(); self?.render() }),
+            form.toggle("Show pet on launch","showOnLaunch"),form.toggle("Remember last position","rememberPosition")])
+        form.group("Permissions & System Settings",[
+            form.row("Finder automation",detail:"Restore the minimized Finder window containing the file and select it.",control:FinderPermissionControl(frame:.zero)),
+            form.row("Files & folders",detail:"macOS requests access to protected folders such as Documents, Desktop, and Downloads as needed. Permissions are managed per folder.",control:ActionButton("System Settings…") {SystemPermissionSettings.open("Privacy_FilesAndFolders")}),
+            form.row("Login items & background activity",detail:"Manage launch at login and launch with Codex. Current status appears under Startup above.",control:ActionButton("Open Login Items…") {SMAppService.openSystemSettingsLoginItems()}),
+            form.note("This app does not require Accessibility, Input Monitoring, Screen Recording, Camera, Microphone, or Full Disk Access permissions.")])
+        var displays = [("","Follow current screen")] + NSScreen.screens.map {(PetPreferences.displayID($0),$0.localizedName)}
         let saved = preferences.string("preferredDisplay")
-        if !displays.contains(where:{$0.0 == saved}) {displays.append((saved,"已断开的显示器（暂用当前屏幕）"))}
-        form.group("桌面",[form.toggle("全屏时自动隐藏","autoFullscreen"),form.choice("所在显示器","preferredDisplay",displays)])
+        if !displays.contains(where:{$0.0 == saved}) {displays.append((saved,"Disconnected display (using current screen)"))}
+        form.group("Desktop",[form.toggle("Hide automatically in full screen","autoFullscreen"),form.choice("Display","preferredDisplay",displays)])
     }
     private func configureLogin() {
-        guard Bundle.main.bundleURL.pathExtension == "app" else {showError("请从应用包设置登录启动",PetFailure(message:"开发脚本不会注册登录项。请使用构建后的 .app。")); return}
+        guard Bundle.main.bundleURL.pathExtension == "app" else {showError("Configure launch at login from the app bundle",PetFailure(message:"Development scripts do not register login items. Use the built .app.")); return}
         do {
             switch SMAppService.mainApp.status {
             case .enabled: try LoginLauncher.setEnabled(false)
@@ -307,49 +307,49 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
             default: try LoginLauncher.setEnabled(true)
             }
             render()
-        } catch {showError("登录启动设置失败",error)}
+        } catch {showError("Unable to configure launch at login",error)}
     }
     @objc private func refreshUpdateStatus() {
         updateStatusLabel?.stringValue = UpdateChecker.shared.recordText
         updateTimeLabel?.stringValue = UpdateChecker.shared.lastCheckText
     }
     private func updates() {
-        let checkUpdate = ActionButton("检查更新…") {UpdateWindow.show()}; checkUpdate.emphasize()
-        form.group("版本",[form.row("当前版本",control:label(Paths.version)),
-            form.row("检查正式版本",control:checkUpdate),
-            form.row("公开仓库",control:ActionButton("GitHub 发布页") {
-                if !NSWorkspace.shared.open(UpdateChecker.releases) {showError("无法打开发布页",PetFailure(message:UpdateChecker.releases.absoluteString))}
+        let checkUpdate = ActionButton("Check for Updates…") {UpdateWindow.show()}; checkUpdate.emphasize()
+        form.group("Version",[form.row("Current version",control:label(Paths.version)),
+            form.row("Check stable releases",control:checkUpdate),
+            form.row("Public repository",control:ActionButton("GitHub Releases") {
+                if !NSWorkspace.shared.open(UpdateChecker.releases) {showError("Unable to open releases page",PetFailure(message:UpdateChecker.releases.absoluteString))}
             })])
-        form.group("自动检查",[form.toggle("启动时检查更新","automaticallyCheckUpdates",detail:"发现新版时提醒，检查失败仅记录在本页。")])
+        form.group("Automatic updates",[form.toggle("Check for updates on launch","automaticallyCheckUpdates",detail:"Notify when a new version is available. Failed checks are recorded on this page.")])
         let status = form.note(UpdateChecker.shared.recordText), time = label(UpdateChecker.shared.lastCheckText)
         updateStatusLabel = status; updateTimeLabel = time
-        form.group("检查记录",[form.row("上次检查时间",control:time),status])
+        form.group("Update history",[form.row("Last checked",control:time),status])
     }
     private func advanced() {
         workspacePage.render()
         if let reason = historyRecoveryReason() {
-            form.group("历史恢复",[form.note(reason),
-                form.row("导出历史原文件",control:ActionButton("导出…") { [weak self] in self?.exportOriginalHistory() }),
-                form.row("重新读取历史",control:ActionButton("重新读取") { [weak self] in
+            form.group("History recovery",[form.note(reason),
+                form.row("Export original history file",control:ActionButton("Export…") { [weak self] in self?.exportOriginalHistory() }),
+                form.row("Reload History",control:ActionButton("Reload") { [weak self] in
                     guard let self else {return}
-                    do {try self.onReloadHistory?(); self.render()} catch {showError("历史仍为只读",error)}
+                    do {try self.onReloadHistory?(); self.render()} catch {showError("History is still read-only",error)}
                 })])
         }
-        form.group("设置文件",[form.row("导出设置",detail:"导出应用设置，不含聊天记录和模型配置。",control:ActionButton("导出…") { [weak self] in self?.exportSettings() }),form.row("导入设置",detail:"导入前检查全部字段；登录启动项不随设置文件改变。",control:ActionButton("导入…") { [weak self] in self?.importSettings() })])
-        let data = label("正在统计…"), work = label("正在统计…"), cache = label("正在统计…")
-        let total = label("正在统计本应用磁盘存储…")
+        form.group("Settings files",[form.row("Export settings",detail:"Export app settings, excluding chat history and model preferences.",control:ActionButton("Export…") { [weak self] in self?.exportSettings() }),form.row("Import settings",detail:"All fields are checked before import. Login items are not changed by settings files.",control:ActionButton("Import…") { [weak self] in self?.importSettings() })])
+        let data = label("Calculating…"), work = label("Calculating…"), cache = label("Calculating…")
+        let total = label("Calculating this app's disk usage…")
         total.font = .systemFont(ofSize:11); total.textColor = .secondaryLabelColor
         total.identifier = .init("settings-explanation")
-        let dataButton = SettingsFooterButton(title:"清空本应用的本机数据…",target:self,action:#selector(clearLocalData))
-        let cacheButton = SettingsFooterButton(title:"清空缓存…",target:self,action:#selector(clearLocalCache))
+        let dataButton = SettingsFooterButton(title:"Clear This App's Local Data…",target:self,action:#selector(clearLocalData))
+        let cacheButton = SettingsFooterButton(title:"Clear Cache…",target:self,action:#selector(clearLocalCache))
         for button in [dataButton,cacheButton] {button.bezelStyle = .rounded; button.hasDestructiveAction = true}
-        form.group("本应用所占本机存储",[total,
-            form.row("本应用所占本机数据",detail:"聊天记录、同步副本和应用设置",control:data),
-            form.row("内置任务文件夹",control:work),
-            form.row("磁盘缓存",control:cache),
-            form.row("清空本应用的本机数据",control:dataButton),form.row("清空磁盘缓存",control:cacheButton),
-            form.row("数据目录",detail:Paths.data.path,control:ActionButton("在访达中显示") {if !NSWorkspace.shared.open(Paths.data) {showError("无法打开数据目录",PetFailure(message:Paths.data.path))}})],
-            action:ActionButton("刷新") { [weak self] in self?.render() })
+        form.group("Local storage used by this app",[total,
+            form.row("This app's local data",detail:"Chat history, synced copies, and app settings",control:data),
+            form.row("Built-in workspace",control:work),
+            form.row("Disk cache",control:cache),
+            form.row("Clear this app's local data",control:dataButton),form.row("Clear disk cache",control:cacheButton),
+            form.row("Data folder",detail:Paths.data.path,control:ActionButton("Show in Finder") {if !NSWorkspace.shared.open(Paths.data) {showError("Unable to open data folder",PetFailure(message:Paths.data.path))}})],
+            action:ActionButton("Refresh") { [weak self] in self?.render() })
         storageGeneration += 1; let generation = storageGeneration
         DispatchQueue.global(qos:.utility).async { [weak self] in
             let result = Result {try LocalStorage.usage()}
@@ -357,47 +357,47 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
                 guard let self, self.storageGeneration == generation, self.selected == .advanced else {return}
                 switch result {
                 case .success(let usage):
-                    total.stringValue = "合计 "+ByteCountFormatter.string(fromByteCount:usage.total,countStyle:.file)+" · 以下占比以三项合计为基准"
+                    total.stringValue = "Total: "+ByteCountFormatter.string(fromByteCount:usage.total,countStyle:.file)+" · Percentages are based on the three categories below"
                     data.stringValue = usage.description(usage.data); work.stringValue = usage.description(usage.workspace); cache.stringValue = usage.description(usage.cache)
                 case .failure(let error):
-                    total.stringValue = "统计失败："+error.localizedDescription
-                    for field in [data,work,cache] {field.stringValue = "未获取"}
+                    total.stringValue = "Calculation failed: "+error.localizedDescription
+                    for field in [data,work,cache] {field.stringValue = "Not available"}
                 }
             }
         }
     }
     @objc private func clearLocalData() {
-        confirmStorage(title:"清空本应用的本机数据？",body:"删除本应用的聊天记录和 Codex 同步副本，并恢复本应用设置。默认任务文件夹、其他工作目录、Codex 原始记录和登录信息保留。",button:"清空本应用的本机数据") { [weak self] in
-            guard let action = self?.onClearLocalData else {throw PetFailure(message:"数据管理尚未就绪。")}
+        confirmStorage(title:"Clear this app's local data?",body:"Delete this app's chat history and local Codex copies, and reset its settings. Workspace files, original Codex history, and sign-in information are retained.",button:"Clear this app's local data") { [weak self] in
+            guard let action = self?.onClearLocalData else {throw PetFailure(message:"Data management is not ready.")}
             try action()
         }
     }
     @objc private func clearLocalCache() {
-        confirmStorage(title:"清空磁盘缓存？",body:"删除本应用的磁盘缓存；后续使用时重新生成。聊天记录、设置和动画素材保留。",button:"清空缓存") {try LocalStorage.clearCache()}
+        confirmStorage(title:"Clear disk cache?",body:"Delete this app's disk cache. It will be regenerated as needed. Chat history, settings, and animation assets are retained.",button:"Clear Cache") {try LocalStorage.clearCache()}
     }
     private func confirmStorage(title:String,body:String,button:String,action:@escaping () throws -> Void) {
         window.makeFirstResponder(nil)
         let alert = NSAlert(); alert.alertStyle = .warning; alert.messageText = title; alert.informativeText = body
-        alert.addButton(withTitle:"取消"); alert.addButton(withTitle:button).hasDestructiveAction = true
+        alert.addButton(withTitle:"Cancel"); alert.addButton(withTitle:button).hasDestructiveAction = true
         alert.beginDangerousSheet(for:window) { [weak self] response in
             guard response == .alertSecondButtonReturn else {return}
-            do {try action(); self?.render()} catch {showError("清理未完成",error)}
+            do {try action(); self?.render()} catch {showError("Cleanup incomplete",error)}
         }
     }
     @objc private func restorePage() {window.makeFirstResponder(nil); preferences.reset(selected.keys); render(); if selected == .appearance {appearancePage.showPreview()} else if selected == .identity {onMessagePreview(.preview)}}
     @objc private func restoreAll() {
         window.makeFirstResponder(nil); appearancePage.dismissPreview()
         let alert = NSAlert(); alert.alertStyle = .warning
-        alert.messageText = "恢复全部设置为默认值？"
-        alert.informativeText = "全部应用设置将恢复默认。聊天记录、动画素材和系统登录启动项保持不变。"
-        alert.addButton(withTitle:"取消")
-        let confirm = alert.addButton(withTitle:"恢复全部设置")
+        alert.messageText = "Reset all settings to defaults?"
+        alert.informativeText = "All app settings will return to their defaults. Chat history, animation assets, and system login items are retained."
+        alert.addButton(withTitle:"Cancel")
+        let confirm = alert.addButton(withTitle:"Reset All Settings")
         confirm.hasDestructiveAction = true
         alert.buttons[0].keyEquivalent = "\u{1b}"; confirm.keyEquivalent = ""
         alert.beginDangerousSheet(for:window) { [weak self] response in guard response == .alertSecondButtonReturn, let self else {return}; self.preferences.reset(Array(PetPreferences.defaults.keys)); self.render() }
     }
     private func exportCompatibilitySettings() {
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "白龙桌宠Swift-配置兼容备份.json"
+        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "Bailong-settings-compatibility.json"
         PanelPresentation.present(panel,relativeTo:window) { [weak self] response in
             guard response == .OK,let url = panel.url,let self else {return}
             do {
@@ -407,28 +407,28 @@ final class SettingsPanel: NSObject, NSWindowDelegate, NSTableViewDataSource, NS
                 let original = self.preferences.defaults.dictionary(forKey:"compatibilityRecoveredValues") ?? [:]
                 values.merge(original) {_,old in old}
                 try JSONSerialization.data(withJSONObject:["settings":values,"schemaVersion":source.integer(forKey:SettingsStorage.schemaKey)],options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
-            } catch {showError("导出兼容备份失败",error)}
+            } catch {showError("Unable to export compatibility record",error)}
         }
     }
     private func exportOriginalHistory() {
         let ext = historyExportExtension()
-        let panel = NSSavePanel(); panel.allowedContentTypes = [UTType(filenameExtension:ext) ?? .data]; panel.nameFieldStringValue = "白龙桌宠Swift-历史原文件."+ext
+        let panel = NSSavePanel(); panel.allowedContentTypes = [UTType(filenameExtension:ext) ?? .data]; panel.nameFieldStringValue = "Bailong-original-history."+ext
         PanelPresentation.present(panel,relativeTo:window) { [weak self] response in
             guard response == .OK,let url = panel.url,let self else {return}
-            do {try self.onExportHistory?(url)} catch {showError("导出历史原文件失败",error)}
+            do {try self.onExportHistory?(url)} catch {showError("Unable to export original history file",error)}
         }
     }
     private func exportSettings() {
         window.makeFirstResponder(nil)
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = PetPreferences.productName+"设置.json"
-        PanelPresentation.present(panel,relativeTo:window) { [weak self] response in guard response == .OK, let url = panel.url, let self else {return}; do {try self.preferences.exportData().write(to:url,options:.atomic)} catch {showError("导出设置失败",error)} }
+        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = PetPreferences.productName+"settings.json"
+        PanelPresentation.present(panel,relativeTo:window) { [weak self] response in guard response == .OK, let url = panel.url, let self else {return}; do {try self.preferences.exportData().write(to:url,options:.atomic)} catch {showError("Unable to export settings",error)} }
     }
     private func importSettings() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
         PanelPresentation.present(panel,relativeTo:window) { [weak self] response in
             guard response == .OK, let url = panel.url, let self else {return}
             do {try self.preferences.importData(Data(contentsOf:url),clipIDs:Set(self.catalog?.all.map(\.id) ?? [])); self.render()}
-            catch {showError("导入设置失败",error)}
+            catch {showError("Unable to import settings",error)}
         }
     }
 }

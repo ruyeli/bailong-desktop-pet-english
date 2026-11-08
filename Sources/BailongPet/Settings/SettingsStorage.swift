@@ -18,7 +18,7 @@ enum SettingsStorage {
             result.setPersistentDomain(values,forName:domain)
         }
         if result.integer(forKey:schemaKey) > schemaVersion {
-            compatibilityNotice = "原设置由更新版本保存，已保留。本次使用独立恢复设置，可继续使用桌宠。"
+            compatibilityNotice = "The original settings were saved by a newer version and are retained. This session uses separate recovery settings so you can continue using the pet."
             let recovery = UserDefaults(suiteName:domain+".recovery")!
             return recovery
         }

@@ -209,16 +209,16 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         let count = NSTextField(labelWithString:"")
         count.font = .monospacedDigitSystemFont(ofSize:11,weight:.regular); count.alignment = .right
         count.widthAnchor.constraint(equalToConstant:54).isActive = true
-        let clear = NSButton(image:NSImage(systemSymbolName:"xmark.circle.fill",accessibilityDescription:"清空"+title)!,target:nil,action:nil)
+        let clear = NSButton(image:NSImage(systemSymbolName:"xmark.circle.fill",accessibilityDescription:"Clear "+title)!,target:nil,action:nil)
         clear.isBordered = false; clear.contentTintColor = .secondaryLabelColor
-        clear.setAccessibilityLabel("清空"+title)
+        clear.setAccessibilityLabel("Clear "+title)
         clear.widthAnchor.constraint(equalToConstant:20).isActive = true
         clear.heightAnchor.constraint(equalToConstant:24).isActive = true
         let updateCount: (String)->Void = {value in
             let length = allowsTokens ? TemplateSyntax.count(value) : value.count
             count.stringValue = "\(length)/\(limit)"
             count.textColor = length >= limit ? .systemRed : .secondaryLabelColor
-            count.setAccessibilityLabel("已输入 \(length) 字，上限 \(limit) 字")
+            count.setAccessibilityLabel("\(length) characters entered; maximum \(limit)")
             clear.isEnabled = !value.isEmpty
         }
         updateCount(value)
@@ -298,8 +298,8 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         case "customAddress": icon = NSImage(systemSymbolName:"bubble.left",accessibilityDescription:nil)
         default: icon = nil
         }
-        let token = ["ownerName":"{用户名}","petName":"{桌宠名}","customAddress":"{特定称呼}"][key]
-        let fallback = ["ownerName":"主人","petName":"白龙娘"][key]
+        let token = ["ownerName":"{userName}","petName":"{petName}","customAddress":"{nickname}"][key]
+        let fallback = ["ownerName":"Friend","petName":"Bailong"][key]
             ?? (key.hasSuffix("Template") ? PetPreferences.defaults[key] as? String : nil)
         return entry(title,value:preferences.string(key),placeholder:placeholder,emptyFallback:fallback,limit:limit,allowsTokens:!["ownerName","petName"].contains(key),icon:icon,tokenHint:token) { [weak self] value in self?.preferences.set(value,for:key) }
     }
@@ -308,7 +308,7 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         slider.isContinuous = true; slider.trackFillColor = AppAccent.color; slider.widthAnchor.constraint(equalToConstant:180).isActive = true
         if key == "petPercent" || key == "bubblePercent" {slider.numberOfTickMarks = Int((range.upperBound-range.lowerBound)/25)+1; slider.tickMarkPosition = .below}
         slider.setAccessibilityLabel(title)
-        let number = NSTextField(string:""); number.alignment = .right; number.widthAnchor.constraint(equalToConstant:54).isActive = true; number.setAccessibilityLabel(title+suffix); (number.cell as? NSTextFieldCell)?.sendsActionOnEndEditing = true
+        let number = NSTextField(string:""); number.alignment = .right; number.widthAnchor.constraint(equalToConstant:54).isActive = true; number.setAccessibilityLabel(title+" "+suffix); (number.cell as? NSTextFieldCell)?.sendsActionOnEndEditing = true
         let formatter = NumberFormatter(); formatter.minimum = NSNumber(value:range.lowerBound); formatter.maximum = NSNumber(value:range.upperBound); formatter.maximumFractionDigits = step < 1 ? 2 : 0; formatter.usesGroupingSeparator = false; number.formatter = formatter
         func format(_ value: Double) {number.doubleValue = value}
         format(slider.doubleValue)
@@ -317,7 +317,7 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         }
         attach(number) { [weak self] sender in let value = max(range.lowerBound,min(range.upperBound,(sender.doubleValue/step).rounded()*step)); slider.doubleValue = value; format(value); self?.preferences.set(value,for:key) }
         let unit = label(suffix); unit.font = .systemFont(ofSize:11); unit.textColor = .secondaryLabelColor
-        unit.widthAnchor.constraint(equalToConstant:22).isActive = true
+        unit.widthAnchor.constraint(equalToConstant:max(22,ceil(unit.intrinsicContentSize.width))).isActive = true
         let controls = NSStackView(views:[number,unit,slider]); controls.spacing = 8; controls.alignment = .centerY
         controls.widthAnchor.constraint(equalToConstant:272).isActive = true
         return dependent(row(title,detail:detail,control:controls),requires:requires)
@@ -327,8 +327,8 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         slider.isContinuous = false; slider.trackFillColor = AppAccent.color
         slider.numberOfTickMarks = 7; slider.tickMarkPosition = .below; slider.allowsTickMarkValuesOnly = false
         slider.widthAnchor.constraint(equalToConstant: 180).isActive = true
-        slider.setAccessibilityLabel("动画缓冲帧数")
-        let minimum = label("6 帧"), maximum = label("240 帧")
+        slider.setAccessibilityLabel("Animation buffer frames")
+        let minimum = label("6 frames"), maximum = label("240 frames")
         for label in [minimum, maximum] { label.font = .systemFont(ofSize: 10); label.textColor = .secondaryLabelColor }
         let limits = NSView()
         for label in [minimum, maximum] { limits.addSubview(label); label.translatesAutoresizingMaskIntoConstraints = false }
@@ -340,7 +340,7 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         let track = NSStackView(views: [slider, limits]); track.orientation = .vertical; track.spacing = 0
         let number = NSTextField(string: String(preferences.animationBufferFrames))
         number.alignment = .right; number.widthAnchor.constraint(equalToConstant: 54).isActive = true
-        number.setAccessibilityLabel("输入动画缓冲帧数"); number.delegate = self
+        number.setAccessibilityLabel("Enter animation buffer frame count"); number.delegate = self
         // 不用 formatter 阻止退出非法输入；提交时统一回到默认值。
         let commit: (String) -> Void = { [weak self] text in
             guard let self else { return }
@@ -352,12 +352,12 @@ final class SettingsForm:NSObject,NSTextFieldDelegate {
         textEndActions[ObjectIdentifier(number)] = commit
         attach(number) { sender in commit(sender.stringValue) }
         attach(slider) { sender in commit(String(Int(sender.doubleValue.rounded()))) }
-        let unit = label("帧"); unit.font = .systemFont(ofSize:11); unit.textColor = .secondaryLabelColor
-        unit.widthAnchor.constraint(equalToConstant:22).isActive = true
+        let unit = label("frames"); unit.font = .systemFont(ofSize:11); unit.textColor = .secondaryLabelColor
+        unit.widthAnchor.constraint(equalToConstant:max(22,ceil(unit.intrinsicContentSize.width))).isActive = true
         let controls = NSStackView(views: [number, unit, track]); controls.orientation = .horizontal
         controls.widthAnchor.constraint(equalToConstant:272).isActive = true
         controls.alignment = .centerY; controls.spacing = 8
-        let result = row("动画缓冲帧数", detail:"动画播放时，同时缓冲后续帧。帧数越少越省运行内存 (RAM)，但解码延迟时更容易停顿。", control: controls)
+        let result = row("Animation buffer frames", detail:"Buffer upcoming frames during playback. Fewer frames use less memory (RAM), but decoding delays can cause pauses.", control: controls)
         bufferControls = [slider, number]; bufferRow = result; updateBufferAvailability()
         return result
     }

@@ -36,9 +36,9 @@ enum SettingsTemplateTokens {
         }
     }
     static let items: [(title:String, token:String, color:NSColor)] = [
-        ("插入特定称呼：", "{特定称呼}", ink((0.12,0.34,0.68),(0.45,0.73,1))),
-        ("插入用户名：", "{用户名}", ink((0.48,0.22,0.62),(0.83,0.62,1))),
-        ("插入桌宠名：", "{桌宠名}", ink((0.62,0.27,0.02),(1,0.72,0.40)))
+        ("Insert nickname: ", "{nickname}", ink((0.12,0.34,0.68),(0.45,0.73,1))),
+        ("Insert your name: ", "{userName}", ink((0.48,0.22,0.62),(0.83,0.62,1))),
+        ("Insert pet name: ", "{petName}", ink((0.62,0.27,0.02),(1,0.72,0.40)))
     ]
     static func ranges(in text:String, apply:(NSRange,NSColor)->Void) {
         let value = text as NSString
@@ -80,7 +80,7 @@ final class SettingsTemplateEditor: AppTextView, TemplateContextMenu {
     }
     override func menu(for event:NSEvent) -> NSMenu? {
         let menu = NSMenu(); menu.allowsContextMenuPlugIns = false
-        for (title,action) in [("剪切",#selector(NSText.cut(_:))),("拷贝",#selector(NSText.copy(_:))),("粘贴",#selector(NSText.paste(_:))),("全选",#selector(NSResponder.selectAll(_:)))] {
+        for (title,action) in [("Cut",#selector(NSText.cut(_:))),("Copy",#selector(NSText.copy(_:))),("Paste",#selector(NSText.paste(_:))),("Select All",#selector(NSResponder.selectAll(_:)))] {
             let item = NSMenuItem(title:title,action:action,keyEquivalent:""); item.target = self; menu.addItem(item)
         }
         guard allowsTokens else {return menu}

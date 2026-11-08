@@ -2,18 +2,18 @@ import AppKit
 
 // 设置“关于”页保留原有图标、版本、原生分页和富文本链接；架构取编译目标。
 final class AboutPageController: NSViewController {
-    private static let repositoryURL = URL(string:"https://github.com/Joseph-Blue/bailong-desktop-pet-mac-swift")!
+    private static let repositoryURL = URL(string:"https://github.com/ruyeli/bailong-desktop-pet-english")!
     private var textViews = [NSTextView]()
     private let titleLabel = NSTextField(wrappingLabelWithString:"")
     private let appIcon = NSImageView()
     private let tabs = NSTabView()
     private static var architecture: String {
         #if arch(arm64)
-        return "Apple Silicon（arm64）"
+        return "Apple Silicon (arm64)"
         #elseif arch(x86_64)
-        return "Intel（x86_64）"
+        return "Intel (x86_64)"
         #else
-        return "其他架构"
+        return "Other architecture"
         #endif
     }
 
@@ -37,14 +37,14 @@ final class AboutPageController: NSViewController {
         title.maximumNumberOfLines = 0; title.lineBreakMode = .byWordWrapping
         title.font = .systemFont(ofSize:23,weight:.semibold)
         title.alignment = .center
-        let version = NSTextField(labelWithString:"版本 \(Paths.version) · \(Self.architecture)")
+        let version = NSTextField(labelWithString:"Version \(Paths.version) · \(Self.architecture)")
         version.font = .systemFont(ofSize:13)
         version.textColor = .secondaryLabelColor
         version.alignment = .center
 
         tabs.tabViewType = .topTabsBezelBorder; tabs.drawsBackground = false
         tabs.font = .systemFont(ofSize:13)
-        for (identifier,label,text) in [("about","关于",aboutText()),("credits","开源项目、技术栈与致谢",creditsText())] {
+        for (identifier,label,text) in [("about","About",aboutText()),("credits","Open Source, Technology & Credits",creditsText())] {
             let item = NSTabViewItem(identifier:identifier)
             item.label = label
             item.view = readingView(text)
@@ -104,7 +104,7 @@ final class AboutPageController: NSViewController {
     @objc func updateIdentity() {
         let name = PetPreferences.shared.appName
         titleLabel.stringValue = name; titleLabel.hoverHelp = titleLabel.stringValue
-        appIcon.setAccessibilityLabel(name+"应用图标")
+        appIcon.setAccessibilityLabel(name+" app icon")
     }
 
     @objc private func openTextLink(_ gesture: NSClickGestureRecognizer) {
@@ -129,41 +129,42 @@ final class AboutPageController: NSViewController {
 
     private func aboutText() -> NSAttributedString {
         let text = NSMutableAttributedString(string:"")
-        paragraph("本项目作者：Joseph Blue（约瑟Blue）",to:text)
-        paragraph("基于 jingh12312-rgb（風-隐）的《GPT白龙娘动态桌宠》，进行非官方 macOS 移植及 Swift + AppKit 原生重写，独立维护。",to:text)
-        paragraph("使用 Swift + AppKit 构建原生设置、历史对话与任务交互，透明动画由 Apple 系统框架播放。支持自定义台词、消息外观、720×720 原画、运行统计及本机历史管理。",to:text)
-        link("本项目公开仓库 · GitHub",url:Self.repositoryURL.absoluteString,to:text)
-        paragraph("对话功能连接本机 Codex，支持桌宠内发起任务与观察桌面端任务。更新入口位于设置的“更新”页及应用菜单，通过 GitHub 正式发布检查版本。",to:text)
-        link("GitHub 发布与更新说明",url:UpdateChecker.releases.absoluteString,to:text)
-        link("原作：GPT白龙娘动态桌宠 · jingh12312-rgb（風-隐）",url:"https://github.com/jingh12312-rgb/bailong-desktop-pet",to:text)
+        paragraph("English edition by ruyeli. Original Swift port: Joseph Blue.",to:text)
+        link("Upstream Swift port · Joseph Blue",url:"https://github.com/Joseph-Blue/bailong-desktop-pet-mac-swift",to:text)
+        paragraph("An independently maintained, unofficial macOS port and native Swift + AppKit rewrite of GPT Bailong Desktop Pet by jingh12312-rgb (Feng Yin).",to:text)
+        paragraph("Built with Swift and AppKit for native settings, chat history, and task interactions. Transparent animations use Apple system frameworks. Includes custom dialogue, message styling, 720×720 source quality, performance statistics, and local history.",to:text)
+        link("Public repository · GitHub",url:Self.repositoryURL.absoluteString,to:text)
+        paragraph("Connects to local Codex to start pet chats and follow desktop tasks. Check versions through GitHub releases from Settings → Updates or the app menu.",to:text)
+        link("GitHub releases and update notes",url:UpdateChecker.releases.absoluteString,to:text)
+        link("Original: GPT Bailong Desktop Pet · jingh12312-rgb (Feng Yin)",url:"https://github.com/jingh12312-rgb/bailong-desktop-pet",to:text)
         return text
     }
 
     private func creditsText() -> NSAttributedString {
         let text = NSMutableAttributedString(string:"")
-        paragraph("感谢原作者及以下项目。本页分别记录原作、素材和软件组件的来源；它们各自适用的许可并不相同。",to:text,color:.secondaryLabelColor)
+        paragraph("Thanks to the original creator and the projects below. Sources for the original work, assets, and software components are listed separately; each has its own licensing terms.",to:text,color:.secondaryLabelColor)
 
-        heading("原作 · GPT白龙娘动态桌宠",to:text)
-        paragraph("作者：jingh12312-rgb（風-隐）。行为与文案参考 v0.5.1 源码。原作 README 声明尚未指定开源许可证。",to:text)
-        link("原作仓库与说明",url:"https://github.com/jingh12312-rgb/bailong-desktop-pet",to:text)
+        heading("Original · GPT Bailong Desktop Pet",to:text)
+        paragraph("Author: jingh12312-rgb (Feng Yin). Behavior and dialogue reference version 0.5.1. The original README states that no open-source license has been specified.",to:text)
+        link("Original repository and documentation",url:"https://github.com/jingh12312-rgb/bailong-desktop-pet",to:text)
 
-        heading("角色动画与应用图标",to:text)
-        paragraph("角色动画与应用图标来自原作者 v0.5.1 发布包。",to:text)
+        heading("Character animation & app icon",to:text)
+        paragraph("Character animations and the app icon originate from the original creator's v0.5.1 release.",to:text)
 
-        heading("原生透明动画",to:text)
-        paragraph("角色动画使用 HEVC with Alpha，运行时通过 macOS 的 AVFoundation 解码，由 CPU／vImage 完成缩放和颜色转换。PNG 素材接入由 AVAssetWriter 和 Apple avconvert 完成。",to:text)
-        link("Apple 透明 HEVC 说明",url:"https://developer.apple.com/videos/play/wwdc2019/506/",to:text)
+        heading("Native transparent animation",to:text)
+        paragraph("HEVC with Alpha animations are decoded by AVFoundation, with CPU/vImage scaling and color conversion. PNG assets are converted using AVAssetWriter and Apple avconvert.",to:text)
+        link("Apple HEVC with Alpha documentation",url:"https://developer.apple.com/videos/play/wwdc2019/506/",to:text)
 
-        heading("SQLite · 本机任务记录读取",to:text)
-        paragraph("使用 macOS 提供的 SQLite 动态库，不另附数据库运行库。SQLite 项目声明其发布代码与文档属于公有领域。",to:text)
-        link("SQLite 官方版权说明",url:"https://www.sqlite.org/copyright.html",to:text)
+        heading("SQLite · Local task records",to:text)
+        paragraph("Uses the SQLite library provided by macOS, with no separate database runtime. SQLite places its published code and documentation in the public domain.",to:text)
+        link("SQLite copyright information",url:"https://www.sqlite.org/copyright.html",to:text)
 
-        heading("macOS 界面设计参考 · macos-golden-gate-design",to:text)
-        paragraph("设置、侧栏、工具栏与原生控件布局参考 gambadio 的 macos-golden-gate-design 技能。该技能声明采用 MIT 许可证，用于开发阶段的设计与审查。",to:text)
+        heading("macOS UI design reference · macos-golden-gate-design",to:text)
+        paragraph("Settings, sidebars, toolbars, and native control layouts reference gambadio's macos-golden-gate-design skill, licensed under MIT and used during design and review.",to:text)
         link("macos-golden-gate-design · GitHub",url:"https://github.com/gambadio/macos-golden-gate-design",to:text)
 
-        heading("开发技术与系统服务",to:text)
-        paragraph("使用 Swift、AppKit、Foundation、AVFoundation、Accelerate／vImage、Core Image、Core Graphics 及 macOS 系统符号构建原生界面。这些系统技术单独列出，不将 AppKit 标注为第三方开源组件。对话功能调用用户已安装的 Codex，不随本应用分发 Codex。",to:text)
+        heading("Technologies & system services",to:text)
+        paragraph("Uses Swift, AppKit, Foundation, AVFoundation, Accelerate/vImage, Core Image, Core Graphics, and macOS system symbols. These system technologies are listed separately from third-party open-source components. Chat uses your installed Codex; Codex is not bundled with this app.",to:text)
         return text
     }
 

@@ -37,89 +37,89 @@ struct SettingsSearchEntry {
         func add(_ section:SettingsSection,_ group:String,_ titles:[String],_ keywords:String = "") {
             entries += titles.map {Self(section:section,group:group,title:$0,keywords:keywords)}
         }
-        add(.general,"启动",["登录时启动","随 Codex 启动","启动后显示桌宠","记住上次位置"],"开机 自启动 跟随 召回")
-        add(.general,"权限与系统设置",["访达自动化"],"权限 授权 Finder 文件链接 最小化 恢复 自动化 系统设置")
-        add(.general,"权限与系统设置",["文件与文件夹"],"权限 授权 文稿 桌面 下载 隐私 文件访问 系统设置")
-        add(.general,"权限与系统设置",["登录项与后台运行"],"权限 批准 开机 自启动 跟随 后台 系统设置")
-        add(.general,"桌面",["全屏时自动隐藏","所在显示器"],"屏幕 多屏")
-        add(.identity,"我们怎么称呼彼此",["你的名字","桌宠的名字","特定称呼"],"主人 昵称 用户名 变量")
-        add(.identity,"见面时说",["问候语"],"台词 欢迎 预览")
-        add(.identity,"任务状态台词",["执行任务中"],"台词 模板 我还在留意进展")
-        add(.identity,"任务状态台词",["有新进展"],"台词 模板 进度 任务计划 阶段性进展 Codex 项目任务 我忙到这一步啦")
-        add(.identity,"任务状态台词",["等待回答","等待批准","任务成功","任务失败","任务中断或取消"],"台词 审批 模板")
-        add(.identity,"任务状态台词",["正在思考","正在调用工具","正在运行命令","已运行命令"],"台词 模板 思考摘要 工具调用 执行命令 运行命令 已运行命令 终端 进展小气泡")
-        for line in ConversationLines.task {add(.identity,"任务状态台词",[line.title],"台词 模板 "+line.text)}
-        for line in ConversationLines.interface {add(.identity,"聊天窗口台词",[line.title],"台词 模板 "+line.text)}
-        add(.identity,"额度查询台词",["正在查询"],"额度 台词")
-        add(.activity,"鼠标互动",["单击桌宠","双击桌宠","右键双击桌宠"],"点击 临时聊天 查看额度 历史消息 显示任务进度 播放随机动画")
-        add(.activity,"自主活动",["活跃程度","活动间隔","自主移动","活动范围","减少重复动作","整体播放速度"],"动画 频率 安静 活泼 倍速 待机 吸边 任务 排除上一动作 随机互动")
-        add(.activity,"任务动作",["收到任务时播放开场","完成任务时播放庆祝"],"动画")
-        add(.messages,"进展提醒",["久无进展时提醒","提醒间隔"],"任务 执行 无新进度 90秒 5分钟 定时 等待 台词")
-        add(.messages,"历史记录",["记录历史"],"聊天 保存 同步")
-        add(.messages,"气泡窗审批",["气泡窗审批按钮顺序"],"批准 允许这一次 允许本轮 拒绝 左拒绝 右允许 左允许 右拒绝 左右 位置 红叉 绿对钩")
-        add(.messages,"气泡卡片与任务概览",["气泡卡片保留数量","互动气泡显示任务概览","近期结束任务数量"],"消息 历史 上一条 下一条 正在执行 最近 完成")
-        add(.messages,"显示哪些消息",["显示思考摘要","显示工具调用"],"显示思考过程 思考摘要 工具名称 操作 执行状态 短气泡 小窗口 顶部 进展 自动 弹出 开关")
-        add(.messages,"任务气泡",["思考与工具进展小气泡"],"自动显示进展小气泡 默认开启 2s 2秒 思考摘要 工具调用 短气泡 小窗口 顶部 进展 自动 弹出 开关")
-        add(.messages,"输入快捷键",["发送与换行"],"回车 Enter ⌃ Control Ctrl ⌘ Command ⇧ Shift ⌥ Option 备选1 备选2 默认 发送 换行 快捷回复 插话 问卷")
-        add(.messages,"任务气泡",["显示任务气泡","任务消息","最终回复"],"任务气泡提醒 任务进展 通知 显示 开关")
-        add(.messages,"显示哪些消息",["互动台词"],"通知 显示 开关")
-        add(.messages,"停留时间",["互动台词","任务消息","最终回复","额度信息","长回复自动延长阅读时间","鼠标移入时暂停倒计时","预览最终回复气泡"],"气泡 自动关闭 秒 时长 悬停 预览 任务进展")
-        add(.messages,"停留时间",["思考与工具进展小气泡"],"进展小气泡停留时间 思考 工具调用 短气泡 小窗口 自动关闭 持续 时间 秒 时长 2s 2秒")
-        add(.messages,"声音",["播放音效"],"声音")
-        add(.messages,"安静陪伴",["立即开启安静陪伴","定时开启安静陪伴","开始时间","结束时间"],"安静陪伴模式 启用专注时段 免打扰 时间 夜间 静音")
-        add(.appearance,"大小",["桌宠大小","气泡大小","消息文字大小"],"缩放 字号 字体")
-        add(.appearance,"桌宠轮廓",["轮廓阴影"],"桌宠 描边 外发光 阴影 投影 边缘")
-        add(.appearance,"气泡形状",["自定义宽高比","宽 : 高"],"气泡 长宽比 宽高比 比例 宽度 高度 形状 排版")
-        add(.appearance,"主题",["外观模式","强调色","自定义"],"主题 颜色 浅色 深色 跟随系统 分段选择")
-        add(.appearance,"消息窗口",["消息窗口材质","液态玻璃跟随系统设定","玻璃不透明度","动态效果","气泡效果"],"液态玻璃 普通材质 分段选择 玻璃 透明 磨砂 背景 动画 预览")
-        add(.advanced,"设置文件",["导出设置","导入设置"],"备份 恢复")
-        add(.advanced,"桌宠对话默认工作区",["默认工作区","恢复内置工作区","清理内置工作区"],"人设 新对话 默认目录 文件夹 Workspace 选择 访达 Finder 废纸篓 清理默认工作区")
-        add(.advanced,"本应用所占本机存储",["本应用所占本机数据","内置任务文件夹","磁盘缓存","清空本应用的本机数据","清空磁盘缓存","数据目录"],"存储 磁盘 空间 清理 删除 访达 Finder 默认任务文件夹 清空本机数据 清空数据")
-        add(.developer,"动画",["画质","素材帧率上限","动画缓冲帧数","整段动画预加载"],"性能 内存 RAM 720 512 384 256 FPS 分辨率 缓冲 卡顿 6帧 24帧 0.25秒")
-        add(.developer,"应用统计",["开启应用性能信息统计浮窗"],"CPU GPU 内存 RAM Swap 性能监视器")
-        add(.updates,"版本",["当前版本","检查正式版本","公开仓库"],"更新 下载 GitHub 发布")
-        add(.updates,"自动检查",["启动时检查更新"],"自动 新版")
-        add(.updates,"检查记录",["上次检查时间"],"更新 检查结果")
-        add(.about,"关于",["关于","开源项目、技术栈与致谢"],"开源致谢 来源 作者 许可证 技术栈 AppKit macOS UI skill")
+        add(.general,"Startup",["Launch at login","Launch with Codex","Show pet on launch","Remember last position"],"startup login follow recall")
+        add(.general,"Permissions & System Settings",["Finder automation"],"permission authorize Finder file links minimize restore automation system settings")
+        add(.general,"Permissions & System Settings",["Files & folders"],"permission authorize Documents Desktop Downloads privacy file access system settings")
+        add(.general,"Permissions & System Settings",["Login items & background activity"],"permission approval startup login follow background system settings")
+        add(.general,"Desktop",["Hide automatically in full screen","Display"],"screen multiple displays")
+        add(.identity,"What we call each other",["Your name","Pet name","Nickname"],"owner nickname user name variable")
+        add(.identity,"Greeting",["Greeting line"],"dialogue welcome preview")
+        add(.identity,"Task status lines",["Task in progress"],"dialogue template monitoring progress")
+        add(.identity,"Task status lines",["New progress"],"dialogue template progress task plan stages Codex project tasks")
+        add(.identity,"Task status lines",["Waiting for input","Waiting for approval","Task completed","Task failed","Task interrupted or canceled"],"dialogue approval template")
+        add(.identity,"Task status lines",["Thinking","Using tools","Running a command","Command finished"],"dialogue template thinking summary tool calls commands terminal progress bubbles")
+        for line in ConversationLines.task {add(.identity,"Task status lines",[line.title],"dialogue template "+line.text)}
+        for line in ConversationLines.interface {add(.identity,"Chat window lines",[line.title],"dialogue template "+line.text)}
+        add(.identity,"Usage check lines",["Checking usage"],"usage dialogue")
+        add(.activity,"Mouse interaction",["Single-click pet","Double-click pet","Double right-click pet"],"click quick chat usage history task progress random animation")
+        add(.activity,"Autonomous activity",["Activity level","Activity interval","Autonomous movement","Movement range","Reduce repeated animations","Overall playback speed"],"animation frequency quiet lively speed idle docked task previous random")
+        add(.activity,"Task animations",["Play task opening animation","Celebrate completed tasks"],"Animations")
+        add(.messages,"Progress reminders",["Remind me when progress stalls","Reminder interval"],"task running no progress 90 seconds 5 minutes timer waiting dialogue")
+        add(.messages,"History",["Save history"],"chat save sync")
+        add(.messages,"In-bubble approvals",["Approval button order"],"approve allow once allow turn deny reject left right order red cross green check")
+        add(.messages,"Message cards & task overview",["Message cards to keep","Show task overview with interactions","Recent completed tasks"],"messages history previous next running recent completed")
+        add(.messages,"Message types",["Show thinking summaries","Show tool calls"],"thinking summary tools operations status progress pop-ups automatic display toggle")
+        add(.messages,"Task bubbles",["Thinking & tool progress pop-ups"],"automatic progress pop-ups enabled 2 seconds thinking tools short bubbles")
+        add(.messages,"Input shortcut",["Sending & new lines"],"Enter Control Ctrl Command Shift Option alternative default send newline quick reply follow-up questionnaire")
+        add(.messages,"Task bubbles",["Show task bubbles","Task messages","Final replies"],"task bubbles progress notification display toggle")
+        add(.messages,"Message types",["Interaction lines"],"notifications display toggle")
+        add(.messages,"Display duration",["Interaction lines","Task messages","Final replies","Usage information","Allow more reading time for long replies","Pause countdown on hover","Preview final reply bubble"],"bubble auto close seconds duration hover preview task progress")
+        add(.messages,"Display duration",["Thinking & tool progress pop-ups"],"progress pop-up duration thinking tools auto-close seconds")
+        add(.messages,"Sound",["Play sound effects"],"Sound")
+        add(.messages,"Quiet companionship",["Enable quiet companionship now","Schedule quiet companionship","Start time","End time"],"quiet companionship schedule focus do not disturb night mute")
+        add(.appearance,"Size",["Pet size","Bubble size","Message font size"],"scale font size typeface")
+        add(.appearance,"Pet outline",["Outline shadow"],"pet outline glow shadow edges")
+        add(.appearance,"Bubble shape",["Custom aspect ratio","Width : Height"],"bubble aspect ratio width height shape layout")
+        add(.appearance,"Theme",["Appearance mode","Accent color","Custom"],"theme colors light dark system segmented")
+        add(.appearance,"Message windows",["Message window material","Use system Liquid Glass settings","Glass opacity","Motion effects","Bubble effects"],"liquid glass plain segmented transparency frosted background animation preview")
+        add(.advanced,"Settings files",["Export settings","Import settings"],"backup restore")
+        add(.advanced,"Default workspace for pet chats",["Default workspace","Restore built-in workspace","Clean built-in workspace"],"persona new chat default directory folder Workspace select Finder trash clean workspace")
+        add(.advanced,"Local storage used by this app",["This app's local data","Built-in workspace","Disk cache","Clear this app's local data","Clear disk cache","Data folder"],"storage disk space clean delete Finder default workspace local data")
+        add(.developer,"Animations",["Quality","Animation frame rate limit","Animation buffer frames","Preload entire animations"],"performance memory RAM 720 512 384 256 FPS resolution buffer stutter frames")
+        add(.developer,"App statistics",["Show floating performance monitor"],"CPU GPU memory RAM Swap performance monitor")
+        add(.updates,"Version",["Current version","Check stable releases","Public repository"],"updates download GitHub releases")
+        add(.updates,"Automatic updates",["Check for updates on launch"],"automatic new version")
+        add(.updates,"Update history",["Last checked"],"updates check result")
+        add(.about,"About",["About","Open Source, Technology & Credits"],"credits sources authors licenses technology AppKit macOS UI skill")
         for index in entries.indices {
-            if ["液态玻璃跟随系统设定","玻璃不透明度"].contains(entries[index].title) {
-                entries[index].condition = "选择液态玻璃材质后显示"
-            } else if entries[index].section == .appearance && entries[index].title == "自定义" {
-                entries[index].condition = "选择自定义强调色后显示"
-            } else if entries[index].section == .appearance && entries[index].title == "宽 : 高" {
-                entries[index].condition = "开启自定义宽高比后生效"
-            } else if entries[index].section == .activity && entries[index].title == "活动范围" {
-                entries[index].condition = "开启自主移动后可调整"
+            if ["Use system Liquid Glass settings","Glass opacity"].contains(entries[index].title) {
+                entries[index].condition = "Shown when Liquid Glass is selected"
+            } else if entries[index].section == .appearance && entries[index].title == "Custom" {
+                entries[index].condition = "Shown when a custom accent color is selected"
+            } else if entries[index].section == .appearance && entries[index].title == "Width : Height" {
+                entries[index].condition = "Applies when custom aspect ratio is enabled"
+            } else if entries[index].section == .activity && entries[index].title == "Movement range" {
+                entries[index].condition = "Available when autonomous movement is enabled"
             } else if entries[index].section == .messages {
                 switch (entries[index].group,entries[index].title) {
-                case (_,"开始时间"),(_,"结束时间"):
-                    entries[index].condition = "开启定时安静陪伴后可调整"
-                case ("进展提醒","久无进展时提醒"):
-                    entries[index].condition = "开启显示任务气泡和任务消息后可调整"
-                case ("进展提醒","提醒间隔"):
-                    entries[index].condition = "开启任务气泡、任务消息和久无进展提醒后可调整"
-                case (_,"近期结束任务数量"):
-                    entries[index].condition = "开启任务概览后可调整"
-                case ("任务气泡","任务消息"),("任务气泡","最终回复"):
-                    entries[index].condition = "开启显示任务气泡后可调整"
-                case ("任务气泡","思考与工具进展小气泡"):
-                    entries[index].condition = "开启显示任务气泡和任务消息后可调整"
-                case ("停留时间","任务消息"):
-                    entries[index].condition = "开启显示任务气泡和任务消息后可调整"
-                case ("停留时间","最终回复"),("停留时间","长回复自动延长阅读时间"):
-                    entries[index].condition = "开启显示任务气泡和最终回复后可调整"
-                case ("停留时间","思考与工具进展小气泡"):
-                    entries[index].condition = "开启显示任务气泡、任务消息和进展小气泡后可调整"
-                case ("停留时间","互动台词"):
-                    entries[index].condition = "开启互动台词后可调整"
+                case (_,"Start time"),(_,"End time"):
+                    entries[index].condition = "Available when scheduled quiet companionship is enabled"
+                case ("Progress reminders","Remind me when progress stalls"):
+                    entries[index].condition = "Enable task bubbles and task messages to adjust"
+                case ("Progress reminders","Reminder interval"):
+                    entries[index].condition = "Enable task bubbles, task messages, and stalled-progress reminders to adjust"
+                case (_,"Recent completed tasks"):
+                    entries[index].condition = "Available when task overview is enabled"
+                case ("Task bubbles","Task messages"),("Task bubbles","Final replies"):
+                    entries[index].condition = "Available when task bubbles are enabled"
+                case ("Task bubbles","Thinking & tool progress pop-ups"):
+                    entries[index].condition = "Enable task bubbles and task messages to adjust"
+                case ("Display duration","Task messages"):
+                    entries[index].condition = "Enable task bubbles and task messages to adjust"
+                case ("Display duration","Final replies"),("Display duration","Allow more reading time for long replies"):
+                    entries[index].condition = "Enable task bubbles and final replies to adjust"
+                case ("Display duration","Thinking & tool progress pop-ups"):
+                    entries[index].condition = "Enable task bubbles, task messages, and progress pop-ups to adjust"
+                case ("Display duration","Interaction lines"):
+                    entries[index].condition = "Available when interaction lines are enabled"
                 default: break
                 }
             }
         }
         if let catalog {
-            add(.identity,"互动台词",(catalog.variants+catalog.work).filter {$0.line != nil}.map(\.title),"台词 模板")
-            for (group,clips) in [("待机动作",catalog.idles+catalog.extras),("互动动作",catalog.variants),("工作动作",catalog.work),("移动动作",catalog.movementAnimations),("鼠标与额度动作",[catalog.dragAnimation,catalog.landingAnimation,catalog.quotaAnimation])] {
-                add(.activity,group,clips.map(\.title),"动画 播放速度 倍速 频率 偏爱 预览")
+            add(.identity,"Interaction lines",(catalog.variants+catalog.work).filter {$0.line != nil}.map(\.title),"dialogue template")
+            for (group,clips) in [("Idle animations",catalog.idles+catalog.extras),("Interaction animations",catalog.variants),("Work animations",catalog.work),("Movement animations",catalog.movementAnimations),("Mouse & usage animations",[catalog.dragAnimation,catalog.landingAnimation,catalog.quotaAnimation])] {
+                add(.activity,group,clips.map(\.title),"animation playback speed frequency favorite preview")
             }
         }
         return entries
@@ -148,7 +148,7 @@ private final class SettingsSearchTable: NSTableView {
 final class SettingsSearchResults: NSView, NSTableViewDataSource, NSTableViewDelegate {
     private let table = SettingsSearchTable()
     private let caption = NSTextField(labelWithString:"")
-    private let empty = NSTextField(labelWithString:"没有找到设置项")
+    private let empty = NSTextField(labelWithString:"No settings found")
     private var entries = [SettingsSearchEntry]()
     var onOpen:(SettingsSearchEntry) -> Void = {_ in}
     var onCancel:() -> Void = {}
@@ -160,7 +160,7 @@ final class SettingsSearchResults: NSView, NSTableViewDataSource, NSTableViewDel
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle; table.autoresizingMask = [.width]
         table.intercellSpacing = .zero; table.dataSource = self; table.delegate = self
         table.target = self; table.action = #selector(openSelection)
-        table.setAccessibilityLabel("设置搜索结果")
+        table.setAccessibilityLabel("Settings search results")
         table.open = { [weak self] in self?.openSelection() }; table.cancel = { [weak self] in self?.onCancel() }
         scroll.documentView = table
         caption.font = .systemFont(ofSize:12,weight:.medium); caption.textColor = .secondaryLabelColor
@@ -174,7 +174,7 @@ final class SettingsSearchResults: NSView, NSTableViewDataSource, NSTableViewDel
     }
     required init?(coder:NSCoder) {fatalError()}
     func show(_ values:[SettingsSearchEntry]) {
-        entries = values; caption.stringValue = "\(values.count) 项结果"; empty.isHidden = !values.isEmpty
+        entries = values; caption.stringValue = "\(values.count) results"; empty.isHidden = !values.isEmpty
         table.reloadData()
         if !values.isEmpty {table.selectRowIndexes(IndexSet(integer:0),byExtendingSelection:false); table.scrollRowToVisible(0)}
     }
@@ -195,7 +195,7 @@ final class SettingsSearchResults: NSView, NSTableViewDataSource, NSTableViewDel
         arrow.contentTintColor = .tertiaryLabelColor
         for view in [title,path,arrow] {view.translatesAutoresizingMaskIntoConstraints = false; cell.addSubview(view)}
         cell.hoverHelp = entry.title+"\n"+path.stringValue
-        cell.textField = title; cell.setAccessibilityLabel(entry.title+"，"+path.stringValue)
+        cell.textField = title; cell.setAccessibilityLabel(entry.title+", "+path.stringValue)
         NSLayoutConstraint.activate([
             title.leadingAnchor.constraint(equalTo:cell.leadingAnchor,constant:12),title.topAnchor.constraint(equalTo:cell.topAnchor,constant:11),
             path.leadingAnchor.constraint(equalTo:title.leadingAnchor),path.topAnchor.constraint(equalTo:title.bottomAnchor,constant:5),
