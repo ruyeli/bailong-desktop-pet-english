@@ -1,3 +1,20 @@
+# English Edition Changelog
+
+## 0.8.0-dev.1
+
+Based on the upstream 0.7.4 release.
+
+- Translate menus, settings and search, chat UI, task alerts, errors, and accessibility labels into English.
+- Add English names for all 35 animations and English default interaction/work dialogue.
+- Add an Introduce Myself menu item with the requested short introduction and existing wave animation.
+- Preserve user-authored names, custom dialogue, and history; support legacy Chinese template variables and attachment placeholders.
+- Route update checks to the English fork and retain upstream credits.
+- Allow compilation with older SDKs by guarding newer appearance APIs.
+
+The original upstream changelog follows.
+
+---
+
 # 变更记录
 
 每个版本只记录相较上一个正式 Release 的变化。完整开发迭代保留在 [开发分支变更记录](https://github.com/Joseph-Blue/bailong-desktop-pet-mac-swift/blob/joseph/dev/CHANGELOG.md) 与 Git 历史。
