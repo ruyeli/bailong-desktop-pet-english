@@ -8,10 +8,10 @@ final class RequestCoordinator {
     init(chat:ChatController) {self.chat = chat}
     func enqueue(_ id:Any,_ method:String,_ params:[String:Any]) {
         if let thread = params["threadId"] as? String,thread != chat.running?.0.threadID {
-            chat.connection.reject(id,"请求不属于当前任务。"); return
+            chat.connection.reject(id,"This request does not belong to the current task."); return
         }
         if let turn = params["turnId"] as? String,let current = chat.running?.1.id,turn != current {
-            chat.connection.reject(id,"请求不属于当前轮次。"); return
+            chat.connection.reject(id,"This request does not belong to the current turn."); return
         }
         do {try CodexProtocol.validate(method,params)}
         catch {chat.connection.reject(id,error.localizedDescription); return}
@@ -35,13 +35,13 @@ final class RequestCoordinator {
         self.chat.running?.1.status = "waitingForApproval"; self.chat.persist()
         let owner = self.chat.running?.1
         let a = NSAlert(); alert = a; a.messageText = self.chat.pet.preferences.statusLine("taskApprovalTemplate")
-        a.informativeText = p["reason"] as? String ?? "请查看具体操作后决定。"
+        a.informativeText = p["reason"] as? String ?? "Review the operation before deciding."
         let details = AppTextView(frame:NSRect(x:0,y:0,width:520,height:180)); details.isEditable = false; details.isSelectable = true
         details.string = String(data:(try? JSONSerialization.data(withJSONObject:p,options:.prettyPrinted)) ?? Data(),encoding:.utf8) ?? ""
         details.isVerticallyResizable = true; details.isHorizontallyResizable = false
         details.textContainer?.widthTracksTextView = true
         let scroll = GutterScrollView(frame:details.frame); scroll.documentView = details; scroll.hasVerticalScroller = true; a.accessoryView = scroll
-        a.addButton(withTitle:"拒绝"); a.addButton(withTitle:"允许这一次"); a.buttons[0].keyEquivalent = "\r"; a.buttons[1].keyEquivalent = ""
+        a.addButton(withTitle:"Deny"); a.addButton(withTitle:"Allow Once"); a.buttons[0].keyEquivalent = "\r"; a.buttons[1].keyEquivalent = ""
         NSApp.activate(ignoringOtherApps:true)
         a.applyAccent()
         showAttention(.approval(fileChange:method == "item/fileChange/requestApproval",reason:p["reason"] as? String))
@@ -54,21 +54,21 @@ final class RequestCoordinator {
     func questions(_ id: Any, _ questions: [[String:Any]], answers: [String:Any]) {
         guard self.chat.running != nil && !self.chat.cancelled else {self.chat.connection.reply(id,["answers":answers]); return}
         guard let q = questions.first else {self.chat.connection.reply(id,["answers":answers]); self.chat.running?.1.status = "running"; self.chat.persist(); nextRequest();return}
-        guard let questionID = q["id"] as? String else {self.chat.connection.reject(id,"问题缺少标识。"); nextRequest(); return}
+        guard let questionID = q["id"] as? String else {self.chat.connection.reject(id,"Question identifier is missing."); nextRequest(); return}
         rejectCurrent = { [weak self] in self?.chat.connection.reply(id,["answers":answers]) }
         let owner = self.chat.running?.1
-        let a = NSAlert(); alert = a; a.messageText = q["header"] as? String ?? "请补充信息"; a.informativeText = q["question"] as? String ?? ""
+        let a = NSAlert(); alert = a; a.messageText = q["header"] as? String ?? "More information needed"; a.informativeText = q["question"] as? String ?? ""
         let input: NSView
         if q["isSecret"] as? Bool == true {input = NSSecureTextField(frame:NSRect(x:0,y:0,width:420,height:28))}
         else if let options = q["options"] as? [[String:Any]], !options.isEmpty {
             let combo = NSComboBox(frame:NSRect(x:0,y:0,width:420,height:28)); combo.addItems(withObjectValues:options.compactMap{$0["label"] as? String}); combo.isEditable = true; input = combo
         } else {input = NSTextField(frame:NSRect(x:0,y:0,width:420,height:28))}
-        a.accessoryView = input; a.addButton(withTitle:"提交"); a.addButton(withTitle:"取消并停止")
+        a.accessoryView = input; a.addButton(withTitle:"Submit"); a.addButton(withTitle:"Cancel and Stop")
         self.chat.running?.1.status = "waitingForInput"
         if q["isSecret"] as? Bool == true {self.chat.running?.1.sensitiveQuestionNotice = self.chat.pet.preferences.sensitiveQuestionNotice}
         self.chat.persist()
         let submit: (([String:String], @escaping (Error?) -> Void) -> Void)? = q["isSecret"] as? Bool == true ? nil : { [weak self,weak a] values,completion in
-            guard let self,let a,self.alert === a,let parent = a.window.sheetParent,let key = q["id"] as? String else {completion(PetFailure(message:"这道问题已结束。")); return}
+            guard let self,let a,self.alert === a,let parent = a.window.sheetParent,let key = q["id"] as? String else {completion(PetFailure(message:"This question has ended.")); return}
             (input as! NSTextField).stringValue = values[key] ?? ""
             parent.endSheet(a.window,returnCode:.alertFirstButtonReturn); completion(nil)
         }

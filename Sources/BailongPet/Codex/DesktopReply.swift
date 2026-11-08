@@ -9,12 +9,12 @@ enum DesktopReply {
         return nil
     }
     struct OwnerUnavailable:LocalizedError {
-        var errorDescription:String? {"Codex 尚未加载这条会话，请在 Codex 中打开。"}
+        var errorDescription:String? {"Codex has not loaded this chat. Open it in Codex."}
     }
     private static func connect(thread:String,timeout:Int = 8) throws -> (DesktopSocket,String) {
         let connection = try DesktopSocket(timeoutSeconds:timeout)
         let initialized = try connection.call("initialize",params:["clientType":"bailong-pet"],version:0)
-        guard let client = (initialized["result"] as? [String:Any])?["clientId"] as? String else {throw PetFailure(message:"Codex 未返回本机连接标识。")}
+        guard let client = (initialized["result"] as? [String:Any])?["clientId"] as? String else {throw PetFailure(message:"Codex did not return a local connection ID.")}
         connection.clientID = client
         let owner:[String:Any]
         do {owner = try connection.call("thread-owner-discovery",params:["hostId":"local","conversationId":thread],version:1)}
@@ -33,7 +33,7 @@ enum DesktopReply {
                 let (connection,target) = try connect(thread:thread)
                 let response = try connection.call("thread-follower-read-model-settings",params:["conversationId":thread],version:1,target:target)
                 guard let result = response["result"] as? [String:Any],let settings = result["settings"] as? [String:Any],
-                      let model = settings["model"] as? String,!model.isEmpty else {throw PetFailure(message:"Codex 未提供当前会话的模型设置。")}
+                      let model = settings["model"] as? String,!model.isEmpty else {throw PetFailure(message:"Codex did not provide model settings for the current chat.")}
                 let liveEffort = settings["reasoningEffort"] as? String
                 let recordedEffort = liveEffort == nil ? try DesktopHistoryReader.recordedReasoningEffort(thread:thread,model:model) : nil
                 return Settings(model:model,effort:liveEffort ?? recordedEffort,effortFromHistory:recordedEffort != nil)
@@ -47,7 +47,7 @@ enum DesktopReply {
     }
     struct Unconfirmed: LocalizedError {
         let underlying:Error
-        var errorDescription:String? {"发送结果尚未确认。请打开 Codex 检查原会话，确认未发送后再重试。\n\n"+underlying.localizedDescription}
+        var errorDescription:String? {"Delivery is unconfirmed. Open the original chat in Codex and verify that the message was not sent before retrying.\n\n"+underlying.localizedDescription}
     }
     static func submit(thread:String,previousTurn:String,cwd:String,text:String,mode:Mode,completion:@escaping (Result<Receipt,Error>) -> Void) {
         DispatchQueue.global(qos:.userInitiated).async {
@@ -65,7 +65,7 @@ enum DesktopReply {
                             "input":request["input"]!,"clientUserMessageId":messageID,"attachments":[],
                             "restoreMessage":["text":text,"cwd":cwd,"context":["workspaceRoots":[cwd]]]],version:1,target:target)
                         guard let envelope = response["result"] as? [String:Any],let result = envelope["result"] as? [String:Any],
-                              let id = result["turnId"] as? String,id == previousTurn else {throw PetFailure(message:"Codex 未确认插话进入原轮次。")}
+                              let id = result["turnId"] as? String,id == previousTurn else {throw PetFailure(message:"Codex did not confirm that the follow-up reached the original turn.")}
                         return Receipt(turnID:id,status:"inProgress")
                     }
                     // 本机 26.1027.30824：start-turn v2；问卷 steer-turn 仍使用 v1。
@@ -76,7 +76,7 @@ enum DesktopReply {
                           let turn = result["turn"] as? [String:Any],
                           let id = turn["id"] as? String,!id.isEmpty,id != previousTurn,
                           let status = turn["status"] as? String else {
-                        throw PetFailure(message:"Codex 未返回新轮次的确认信息。")
+                        throw PetFailure(message:"Codex did not return confirmation for the new turn.")
                     }
                     return Receipt(turnID:id,status:status)
                 } catch {throw Unconfirmed(underlying:error)}

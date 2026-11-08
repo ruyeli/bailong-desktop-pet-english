@@ -22,10 +22,10 @@ struct QuotaResetCards {
         guard let n = value as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID(), n.doubleValue.isFinite else {return nil}
         return n.doubleValue
     }
-    var amount: String {availableCount.map {"剩余 \($0) 张"} ?? "暂未提供"}
+    var amount: String {availableCount.map {"\($0) cards remaining"} ?? "Not provided yet"}
     var detail: String? {
         if availableCount == 0 {return nil}
-        if expirations.isEmpty {return "过期时间暂未提供"}
+        if expirations.isEmpty {return "Expiration not provided"}
         let groups = Dictionary(grouping:expirations,by:{$0})
         let order = groups.keys.sorted { a,b in
             func rank(_ value: Expiration) -> Double {
@@ -36,13 +36,13 @@ struct QuotaResetCards {
         var lines = order.map { expiration -> String in
             let count = groups[expiration]!.count
             switch expiration {
-            case .date(let date):return "\(count) 张 · \(date.formatted(date:.abbreviated,time:.shortened)) 到期"
-            case .unlimited:return "\(count) 张 · 不限期"
-            case .unavailable:return "\(count) 张 · 过期时间暂未提供"
+            case .date(let date):return "\(count) cards · Expire \(date.formatted(date:.abbreviated,time:.shortened))"
+            case .unlimited:return "\(count) cards · No expiration"
+            case .unavailable:return "\(count) cards · Expiration not provided"
             }
         }
         if let availableCount, availableCount > expirations.count {
-            lines.append("其余 \(availableCount-expirations.count) 张 · 过期时间暂未提供")
+            lines.append("Other \(availableCount-expirations.count) cards · Expiration not provided")
         }
         return lines.joined(separator:"\n")
     }

@@ -21,7 +21,7 @@ enum UserInputText {
                 let path = String(line[line.index(after:separator.lowerBound)...]).trimmingCharacters(in:.whitespaces)
                 let image = entry.components(separatedBy:"\n").contains("Image attachment: true")
                 if image {linkedImages += 1}
-                let name = image ? "图片" : URL(fileURLWithPath:path).lastPathComponent
+                let name = image ? "Image" : URL(fileURLWithPath:path).lastPathComponent
                 let label = name.replacingOccurrences(of:"\\",with:"\\\\").replacingOccurrences(of:"[",with:"\\[").replacingOccurrences(of:"]",with:"\\]")
                 attachments.append("[\(label)](<\(URL(fileURLWithPath:path).absoluteString)>)")
             }
@@ -29,18 +29,20 @@ enum UserInputText {
                 text = body.trimmingCharacters(in:.whitespacesAndNewlines)
                 // 旧投影曾在完整包装末尾追加图片占位；已有同份图片链接时去掉该占位。
                 if linkedImages > 0 {
-                    let placeholder = linkedImages == 1 ? "[图片]" : "[图片 × \(linkedImages)]"
-                    if text == placeholder {text = ""}
-                    else if text.hasSuffix("\n\n"+placeholder) {text.removeLast(2+placeholder.count)}
+                    let placeholders = linkedImages == 1 ? ["[Image]", "[图片]"] : ["[Images × \(linkedImages)]", "[图片 × \(linkedImages)]"]
+                    for placeholder in placeholders {
+                        if text == placeholder {text = ""}
+                        else if text.hasSuffix("\n\n"+placeholder) {text.removeLast(2+placeholder.count)}
+                    }
                 }
-                if attachments.isEmpty {attachments = ["[附件]"]}
+                if attachments.isEmpty {attachments = ["[Attachment]"]}
             } else if !attachments.isEmpty {
                 // 包装尚未完整到达时只呈现已知附件，不把路径清单当用户提问。
                 text = ""
             }
         } else {
-            if images > 0 {attachments.append(images == 1 ? "[图片]" : "[图片 × \(images)]")}
-            if files > 0 {attachments.append(files == 1 ? "[附件]" : "[附件 × \(files)]")}
+            if images > 0 {attachments.append(images == 1 ? "[Image]" : "[Images × \(images)]")}
+            if files > 0 {attachments.append(files == 1 ? "[Attachment]" : "[Attachments × \(files)]")}
         }
         let body = limitBody && text.count > limit ? String(text.prefix(limit))+"…" : text
         return [body.trimmingCharacters(in:.whitespacesAndNewlines),attachments.joined(separator:"  ·  ")]

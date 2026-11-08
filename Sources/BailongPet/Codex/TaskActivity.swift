@@ -25,11 +25,11 @@ struct TaskActivity:Equatable {
     static func from(type:String,status:String?,summary:String = "",tool:String? = nil,command:String? = nil,
                      actions:[[String:Any]] = [],paths:[String] = []) -> TaskActivity? {
         // reasoning 项结束只表示这一段摘要结束，不能将仍在执行的轮次改成“思考摘要”。
-        if type == "reasoning" {return .init(title:"正在思考",detail:summary,kind:.reasoning)}
-        let labels = ["commandExecution":("正在运行命令","已运行命令"),"fileChange":("正在修改文件","文件修改已结束"),
-            "mcpToolCall":("正在调用工具","工具调用已结束"),"dynamicToolCall":("正在调用工具","工具调用已结束"),
-            "webSearch":("正在搜索网页","网页搜索已结束"),"imageGeneration":("正在生成图片","图片生成已结束"),
-            "imageView":("正在查看图片","已查看图片"),"contextCompaction":("正在压缩上下文","上下文压缩已结束")]
+        if type == "reasoning" {return .init(title:"Thinking",detail:summary,kind:.reasoning)}
+        let labels = ["commandExecution":("Running a command","Command finished"),"fileChange":("Editing files","File edits ended"),
+            "mcpToolCall":("Using tools","Tool call ended"),"dynamicToolCall":("Using tools","Tool call ended"),
+            "webSearch":("Searching the web","Web search ended"),"imageGeneration":("Generating image","Image generation ended"),
+            "imageView":("Viewing image","Viewed image"),"contextCompaction":("Compacting context","Context compaction ended")]
         guard let labels = labels[type] else {return nil}
         let ended = ["completed","failed","interrupted","cancelled","canceled","declined"].contains(status ?? "")
         var detail = type == "commandExecution" ? command ?? "" : tool ?? ""
@@ -37,17 +37,17 @@ struct TaskActivity:Equatable {
             detail = actions.map { action in
                 let path = action["path"] as? String ?? ""
                 switch action["type"] as? String {
-                case "read": return (ended ? "已读取 " : "正在读取 ")+(action["name"] as? String ?? path)
-                case "listFiles": return (ended ? "已列出文件" : "正在列出文件")+(path.isEmpty ? "" : " · "+path)
+                case "read": return (ended ? "Read " : "Reading ")+(action["name"] as? String ?? path)
+                case "listFiles": return (ended ? "Listed files" : "Listing files")+(path.isEmpty ? "" : " · "+path)
                 case "search":
                     let query = action["query"] as? String ?? ""
-                    return (ended ? "已搜索" : "正在搜索")+(query.isEmpty ? "" : "「"+query+"」")+(path.isEmpty ? "" : " · "+path)
+                    return (ended ? "Search finished" : "Searching")+(query.isEmpty ? "" : "「"+query+"」")+(path.isEmpty ? "" : " · "+path)
                 default: return action["command"] as? String ?? command ?? ""
                 }
             }.filter {!$0.isEmpty}.joined(separator:"\n")
         }
         if type == "fileChange" {detail = paths.joined(separator:"\n")}
-        if status == "failed" {detail = [labels.1,detail,"本次调用失败，任务尚未报告结束。"].filter {!$0.isEmpty}.joined(separator:" · ")}
+        if status == "failed" {detail = [labels.1,detail,"This call failed. The task has not reported completion."].filter {!$0.isEmpty}.joined(separator:" · ")}
         return .init(title:ended ? labels.1 : labels.0,detail:detail,finished:ended,
                      templateKey:status == "failed" ? "taskWarningTemplate" : type == "commandExecution" ? (ended ? "taskCommandCompletedTemplate" : "taskCommandTemplate") : nil)
     }
@@ -63,7 +63,7 @@ struct TaskActivity:Equatable {
         var result:TaskActivity?, runningTool:TaskActivity?
         for item in items {
             let type = item["type"] as? String ?? ""
-            if type == "agentMessage" {result = .init(title:"正在回复",kind:.reply,templateKey:replyTemplateKey); continue}
+            if type == "agentMessage" {result = .init(title:"Replying",kind:.reply,templateKey:replyTemplateKey); continue}
             guard let next = from(item:item) else {continue}
             if next.kind == .tool,!next.finished,["inProgress","running"].contains(item["status"] as? String ?? "") {runningTool = next}
             // 连续的空 reasoning 项不擦掉此前同阶段已公开的摘要；工具/回复切换仍改变状态。

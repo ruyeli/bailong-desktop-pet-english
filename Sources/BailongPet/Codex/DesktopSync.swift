@@ -44,7 +44,7 @@ struct PublicSnapshot {
 
 final class DesktopSync {
     let chat: ChatController
-    private let queue = DispatchQueue(label:"白龙娘外部任务只读观察",qos:.utility,autoreleaseFrequency:.workItem)
+    private let queue = DispatchQueue(label:"Bailong External Task Observer",qos:.utility,autoreleaseFrequency:.workItem)
     private let approvalReader = DesktopApprovalReader()
     private var timer: Timer?
     private var reading = false, stopped = false, initial = true
@@ -63,10 +63,10 @@ final class DesktopSync {
         UserDefaults.standard.set(clearedBefore,forKey:"desktopHistoryClearedBefore")
         for key in running {chat.pet.taskEnded(key,status:"interrupted")}
         running.removeAll(); tracked.removeAll(); fingerprints.removeAll(); noticedAt.removeAll(); changedAt.removeAll()
-        chat.desktopTasks = []; chat.desktopTaskReadStatus = "正在同步 Codex 任务状态…"
+        chat.desktopTasks = []; chat.desktopTaskReadStatus = "Syncing Codex task status…"
     }
-    private(set) var diagnostics = "等待同步"
-    var status = "正在准备读取本机 Codex 的任务记录。\n读取成功后，这里会显示任务数量、当前状态和最近刷新时间。"
+    private(set) var diagnostics = "Waiting to sync"
+    var status = "Preparing to read local Codex task records.\nOnce loaded, this view shows task counts, current status, and the last refresh time."
     init(chat: ChatController) {
         self.chat = chat
         chat.onHistoryDeleted = { [weak self] conversation in self?.forget(conversation) }
@@ -112,14 +112,14 @@ final class DesktopSync {
                             values[index].attention = nil; values[index].alert = ""; values[index].status = "inProgress"
                         }
                     }
-                    if self.approvalReader.unavailableCount > 0 {approvalError = "\(self.approvalReader.unavailableCount) 个会话尚未收到 Codex 实时状态。"}
+                    if self.approvalReader.unavailableCount > 0 {approvalError = "\(self.approvalReader.unavailableCount) chats have not received live Codex status."}
                 } catch {approvalError = error.localizedDescription}
                 let titles = try DesktopHistoryReader.readTitles(titleIDs)
                 DispatchQueue.main.async {
                     self.reading = false; guard !self.stopped else {return}
                     self.chat.desktopTaskReadStatus = nil
                     self.chat.desktopTasks = values.filter {$0.isLatest && $0.started > self.clearedBefore && !self.chat.store.deletedThreads.contains($0.logical)}.map {
-                        BubbleTaskSummary(key:$0.key,title:$0.title,threadID:$0.logical,status:$0.status,start:Date(timeIntervalSince1970:$0.started),end:$0.completed.flatMap {$0 > 0 ? Date(timeIntervalSince1970:$0) : nil},turnID:$0.turn,activity:$0.attention.map {TaskActivity(title:$0.kind == .approval ? "等待批准" : "等待回答",kind:.reply)} ?? $0.activity)
+                        BubbleTaskSummary(key:$0.key,title:$0.title,threadID:$0.logical,status:$0.status,start:Date(timeIntervalSince1970:$0.started),end:$0.completed.flatMap {$0 > 0 ? Date(timeIntervalSince1970:$0) : nil},turnID:$0.turn,activity:$0.attention.map {TaskActivity(title:$0.kind == .approval ? "Waiting for approval" : "Waiting for input",kind:.reply)} ?? $0.activity)
                     }
                     if !titleIDs.isEmpty {self.lastTitleSync = Date()}
                     var changed = false
@@ -131,14 +131,14 @@ final class DesktopSync {
                     let displayChanged = values.contains {self.fingerprints[$0.key] != $0.fingerprint}
                     let recordsChanged = self.accept(values)
                     if let approvalError {
-                        self.diagnostics += " · 审批同步失败："+approvalError
-                        self.status += "\n\n实时审批状态未同步："+approvalError
+                        self.diagnostics += " · Approval sync failed: "+approvalError
+                        self.status += "\n\nLive approval status is not synced: "+approvalError
                     }
                     if recordsChanged || changed {self.chat.persist()}
                     else if displayChanged {self.chat.refresh()}
                 }
             }
-            catch {DispatchQueue.main.async {self.reading = false; self.chat.desktopTasks = []; self.chat.desktopTaskReadStatus = "Codex 当前任务状态读取失败"; self.diagnostics = "读取失败：" + error.localizedDescription; self.status = "暂时无法读取 Codex 的任务记录。\n桌宠会自动重试；你也可以打开 Codex，确认会话能够正常使用。\n\n具体原因（供排查）：\n"+error.localizedDescription}}
+            catch {DispatchQueue.main.async {self.reading = false; self.chat.desktopTasks = []; self.chat.desktopTaskReadStatus = "Unable to read current Codex task status"; self.diagnostics = "Read failed: " + error.localizedDescription; self.status = "Unable to read Codex task records right now.\nThe pet will retry automatically. You can also open Codex and check that the chat works.\n\nDetails:\n"+error.localizedDescription}}
         }
     }
     private func accept(_ values: [PublicSnapshot]) -> Bool {
@@ -247,7 +247,7 @@ final class DesktopSync {
                 let repeatDue = now-(noticedAt[key] ?? now) >= 300
                 if !skippedAll && (different || repeatDue) {
                     let quiet = now-(changedAt[key] ?? now) >= 90
-                    let text = !value.alert.isEmpty ? value.alert : ["waitingForInput","waitingForApproval"].contains(value.status) ? "任务正在等待你的处理，请回到原 Codex 窗口。" : quiet ? "已经有一会儿没有新进度，任务尚未报告完成。" : value.messages.isEmpty ? value.step : value.agentMessages.last(where:{!$0.isFinal})?.text ?? value.messages
+                    let text = !value.alert.isEmpty ? value.alert : ["waitingForInput","waitingForApproval"].contains(value.status) ? "A task needs your attention. Return to the original Codex window." : quiet ? "There has been no recent progress. The task has not reported completion." : value.messages.isEmpty ? value.step : value.agentMessages.last(where:{!$0.isFinal})?.text ?? value.messages
                     let questionIDs = value.attention?.questions.map(\.id).joined(separator:"\u{001f}") ?? ""
                     let signature = (value.attention?.kind.rawValue ?? "progress")+":"+value.approvalID+":"+questionIDs+":"+text
                     if (value.attention != nil || value.status.hasPrefix("waiting")) && !text.isEmpty && (turn.notices[signature] == nil || previous?.approval?.details != value.approval?.details || previousAttention != value.attention?.kind || (repeatDue && (!value.alert.isEmpty || quiet || value.status.hasPrefix("waiting")))) {
@@ -273,7 +273,7 @@ final class DesktopSync {
         fingerprints = fingerprints.filter {retained.contains($0.key)}
         changedAt = changedAt.filter {retained.contains($0.key)}
         noticedAt = noticedAt.filter {retained.contains($0.key)}
-        diagnostics = "\(values.count) 条 · 活跃 \(running.count) · 待更新 \(missing.count) · " + Date().formatted(.dateTime.hour(.twoDigits(amPM:.omitted)).minute(.twoDigits).second(.twoDigits))
+        diagnostics = "\(values.count) tasks · Active \(running.count) · Awaiting update \(missing.count) · " + Date().formatted(.dateTime.hour(.twoDigits(amPM:.omitted)).minute(.twoDigits).second(.twoDigits))
         status = Self.describeStatus(values,missing:missing.count)
         return changed
     }
@@ -284,7 +284,7 @@ final class DesktopSync {
                 let current = try DesktopHistoryReader.read(excluded:[],watched:[snapshot]).first {$0.key == snapshot.key}
                 guard let current,current.attention?.isSensitive == false,
                       Set(questions.map(\.id)).isSubset(of:Set(current.attention?.questions.map(\.id) ?? [])),!questions.isEmpty else {
-                    throw PetFailure(message:"这道问题已回答或已结束，请查看 Codex 当前状态。")
+                    throw PetFailure(message:"This question has been answered or ended. Check its current status in Codex.")
                 }
                 DesktopQuestionReply.submit(thread:snapshot.logical,cwd:snapshot.cwd,questions:questions,answers:answers,completion:completion)
             } catch {DispatchQueue.main.async {completion(error)}}
@@ -297,25 +297,25 @@ final class DesktopSync {
         let unknown = records.filter {!known.contains($0.status)}.count
         let conversations = Set(records.map(\.logical)).count
         var lines = [
-            "当前读取到 \(records.count) 条任务记录，来自 \(conversations) 个 Codex 会话。",
+            "Read \(records.count) task records from \(conversations) Codex chats.",
             "",
-            "正在进行：\(working) 条",
-            "等待你批准：\(counts["waitingForApproval"] ?? 0) 条",
-            "等待你补充信息：\(counts["waitingForInput"] ?? 0) 条",
-            "已完成：\(counts["completed"] ?? 0) 条",
-            "已失败：\(counts["failed"] ?? 0) 条",
-            "已停止：\(counts["interrupted"] ?? 0) 条"
+            "In progress: \(working)",
+            "Waiting for approval: \(counts["waitingForApproval"] ?? 0) tasks",
+            "Waiting for input: \(counts["waitingForInput"] ?? 0) tasks",
+            "Completed: \(counts["completed"] ?? 0) tasks",
+            "Failed: \(counts["failed"] ?? 0) tasks",
+            "Stopped: \(counts["interrupted"] ?? 0) tasks"
         ]
-        if unknown > 0 {lines.append("状态尚不明确：\(unknown) 条")}
-        if missing > 0 {lines.append("另有 \(missing) 条此前仍在进行的任务暂时读不到，正在等待状态更新。")}
+        if unknown > 0 {lines.append("Status unknown: \(unknown)")}
+        if missing > 0 {lines.append("\(missing) previously active tasks are temporarily unreadable. Waiting for status updates.")}
         lines += [
-            "", "最近刷新："+Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour(.twoDigits(amPM:.omitted)).minute(.twoDigits).second(.twoDigits)),
-            "", "这些数量怎么理解？",
-            "每次发送消息并等待回复算一条任务记录；同一个会话里多次发送会分别计数。",
-            "统计范围是最近使用的 Codex 会话，以及桌宠已经在跟踪的任务。",
-            "需要批准或补充信息时，请回到原 Codex 会话处理。"
+            "", "Last refreshed: "+Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits).hour(.twoDigits(amPM:.omitted)).minute(.twoDigits).second(.twoDigits)),
+            "", "What do these counts mean?",
+            "Each message sent and its reply count as one task. Multiple messages in the same chat are counted separately.",
+            "Counts include recently used Codex chats and tasks the pet is already following.",
+            "Return to the original Codex chat for approvals or additional input."
         ]
         return lines.joined(separator:"\n")
     }
-    func close() {diagnostics = "已停止"; stopped = true; timer?.invalidate(); queue.async {self.approvalReader.close()}; status = "任务同步已停止，当前不会读取新的任务状态。"}
+    func close() {diagnostics = "Stopped"; stopped = true; timer?.invalidate(); queue.async {self.approvalReader.close()}; status = "Task synchronization has stopped. New task status is not being read."}
 }

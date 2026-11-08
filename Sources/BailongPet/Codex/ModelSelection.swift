@@ -43,21 +43,21 @@ final class ChatModelSettings {
     }
     // 与已安装 Codex 的简中本地化一致，Max / Ultra 保留原文，不按模型另起译名。
     static func effortName(_ raw: String) -> String {
-        ["none":"无","minimal":"极低","low":"轻度","medium":"中","high":"高","xhigh":"极高","max":"Max","ultra":"Ultra","persistent":"持续"][raw] ?? raw
+        ["none":"None","minimal":"Minimal","low":"Light","medium":"Medium","high":"High","xhigh":"Very high","max":"Max","ultra":"Ultra","persistent":"Continuous"][raw] ?? raw
     }
-    var effortTitle: String {currentEffort.map(Self.effortName) ?? "不可调"}
+    var effortTitle: String {currentEffort.map(Self.effortName) ?? "Fixed"}
     var effortExplanation: String {
-        guard let effort = currentEffort else {return "跟随 Codex 的模型与推理强度设置。"}
-        let descriptions = ["none":"直接作答，不额外展开推理。", "minimal":"尽量减少思考，适合简单任务。",
-            "low":"少量思考，优先响应速度。", "medium":"平衡思考深度与响应速度。",
-            "high":"充分分析问题，适合较复杂的任务。", "xhigh":"深入分析复杂问题，可能需要更长时间。",
-            "max":"投入更多推理，适合难度较高的任务。", "ultra":"使用最高档推理投入，适合需要深入分析的任务。"]
-        return descriptions[effort] ?? "使用当前模型提供的「\(Self.effortName(effort))」推理强度。"
+        guard let effort = currentEffort else {return "Follow Codex's model and reasoning effort settings."}
+        let descriptions = ["none":"Answer directly without additional reasoning.", "minimal":"Minimal thinking for simple tasks.",
+            "low":"A little thinking, prioritizing response speed.", "medium":"Balance reasoning depth and response speed.",
+            "high":"Thorough analysis for more complex tasks.", "xhigh":"Deep analysis of complex problems; takes more time.",
+            "max":"More reasoning for difficult tasks.", "ultra":"Maximum reasoning effort for tasks that need extensive analysis."]
+        return descriptions[effort] ?? "Use this model's \(Self.effortName(effort)) reasoning effort."
     }
     var defaultTitle: String {
         let id = configuredModel ?? models.first(where:{$0.isDefault})?.model
-        let name = models.first(where:{$0.model == id})?.displayName ?? id ?? "未获取模型"
-        return "默认（"+name+" - 跟随 Codex）"
+        let name = models.first(where:{$0.model == id})?.displayName ?? id ?? "Models not loaded"
+        return "Default ("+name+" - Follow Codex)"
     }
     var lunaMinimum: (String,String)? {
         guard let luna = models.first(where:{$0.model == "gpt-5.6-luna"}) else {return nil}
@@ -110,13 +110,13 @@ final class ChatModelSettings {
     }
     func parameters() throws -> [String:Any] {
         if let selectedModel, !models.contains(where:{$0.model == selectedModel}) {
-            throw PetFailure(message:"所选模型暂不可用，请打开模型选择器刷新或选择其他模型。")
+            throw PetFailure(message:"The selected model is unavailable. Refresh the model picker or choose another model.")
         }
         var result = [String:Any]()
         if let model = currentModelID {result["model"] = model}
         if let effort = currentEffort {
             if let currentModel, !currentModel.supportedReasoningEfforts.contains(where:{$0.reasoningEffort == effort}) {
-                throw PetFailure(message:"当前模型不支持所选思考等级，请重新选择。")
+                throw PetFailure(message:"This model does not support the selected reasoning effort. Choose another level.")
             }
             result["effort"] = effort
         }
@@ -138,13 +138,13 @@ final class ModelSelector: ModelSummaryButton, NSPopoverDelegate {
         popover.delegate = self
         image = NSImage(systemSymbolName:"chevron.down",accessibilityDescription:nil); imagePosition = .imageTrailing
         target = self; action = #selector(openChoices)
-        setAccessibilityLabel("选择模型与推理强度")
+        setAccessibilityLabel("Choose model and reasoning effort")
         NotificationCenter.default.addObserver(self,selector:#selector(updateTitle),name:ChatModelSettings.changed,object:settings)
         updateTitle()
     }
     required init?(coder:NSCoder) {fatalError()}
     @objc private func updateTitle() {
-        title = ModelPresentation.summary(model:settings.currentModelID ?? "未获取模型",displayName:settings.currentModel?.displayName,effort:settings.effortTitle)
+        title = ModelPresentation.summary(model:settings.currentModelID ?? "Models not loaded",displayName:settings.currentModel?.displayName,effort:settings.effortTitle)
         hoverHelp = settings.title
     }
     func closeChoices() {popover.performClose(nil)}
@@ -182,14 +182,14 @@ final class ModelSelector: ModelSummaryButton, NSPopoverDelegate {
 final class ModelSelectorContent: NSViewController {
     var onResize: (NSSize) -> Void = {_ in}
     private let settings: ChatModelSettings
-    private let heading = label("模型与推理强度",bold:true)
+    private let heading = label("Model & reasoning effort",bold:true)
     private let picker = NSPopUpButton(frame:.zero,pullsDown:false)
     private let effort = NSTextField(labelWithString:"")
     private let explanation = NSTextField(wrappingLabelWithString:"")
     private let slider = NSSlider(value:0,minValue:0,maxValue:1,target:nil,action:nil)
-    private let sync = ActionButton("与 Codex 同步") {}
-    private let luna = ActionButton("设置为 5.6-Luna 最低") {}
-    private let refresh = ActionButton("刷新模型") {}
+    private let sync = ActionButton("Synced with Codex") {}
+    private let luna = ActionButton("Use 5.6-Luna Minimum") {}
+    private let refresh = ActionButton("Refresh Models") {}
     private var options = [ChatModel.Effort]()
     private var effortMarks = [NSTextField]()
     private let scroll = GutterScrollView(), body = TopDownView()
@@ -206,7 +206,7 @@ final class ModelSelectorContent: NSViewController {
         picker.font = .systemFont(ofSize:13*scale)
         effort.font = .systemFont(ofSize:14*scale,weight:.semibold)
         slider.target = self; slider.action = #selector(effortChanged)
-        slider.allowsTickMarkValuesOnly = true; slider.isContinuous = false; slider.setAccessibilityLabel("推理强度")
+        slider.allowsTickMarkValuesOnly = true; slider.isContinuous = false; slider.setAccessibilityLabel("Reasoning effort")
         for text in [explanation] {text.font = .systemFont(ofSize:12*scale); text.isSelectable = false}
         explanation.textColor = .secondaryLabelColor
         refresh.frame = NSRect(x:16,y:9,width:88,height:28); refresh.callback = { [weak self] in self?.settings.onLoad(true) }
@@ -235,13 +235,13 @@ final class ModelSelectorContent: NSViewController {
             mark.textColor = option.reasoningEffort == settings.currentEffort ? AppAccent.color : .secondaryLabelColor
             body.addSubview(mark); return mark
         }
-        effort.stringValue = "推理强度 · "+settings.effortTitle
+        effort.stringValue = "Reasoning effort · "+settings.effortTitle
         effort.textColor = AppAccent.color
-        explanation.stringValue = settings.loading ? "正在读取可用模型…" : settings.error != nil ? "模型列表暂不可用，请点击刷新模型重试。" : options.isEmpty ? "此模型不提供可调整的推理强度。" : settings.effortExplanation
+        explanation.stringValue = settings.loading ? "Loading available models…" : settings.error != nil ? "The model list is unavailable. Click Refresh Models to try again." : options.isEmpty ? "This model has no adjustable reasoning effort." : settings.effortExplanation
         explanation.hoverHelp = settings.error
         refresh.isEnabled = !settings.loading; sync.isEnabled = !settings.loading
         luna.isEnabled = !settings.loading && settings.lunaMinimum != nil
-        luna.hoverHelp = settings.lunaMinimum == nil ? "当前模型列表未提供 GPT-5.6 Luna。" : "切换到 GPT-5.6 Luna 支持的最低推理强度，并记住选择。"
+        luna.hoverHelp = settings.lunaMinimum == nil ? "GPT-5.6 Luna is not in the current model list." : "Switch to the lowest reasoning effort supported by GPT-5.6 Luna and remember the selection."
         layoutControls()
     }
     private func layoutControls() {

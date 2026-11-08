@@ -8,15 +8,15 @@ enum DesktopQuestionReply {
         DispatchQueue.global(qos:.userInitiated).async {
             do {
                 let replies = questions.filter {!(answers[$0.id] ?? "").trimmingCharacters(in:.whitespacesAndNewlines).isEmpty}.map {["questionItemId":$0.id,"question":$0.prompt,"answer":answers[$0.id] ?? ""]}
-                guard !replies.isEmpty else {throw PetFailure(message:"请填写回答后再提交。")}
+                guard !replies.isEmpty else {throw PetFailure(message:"Enter an answer before submitting.")}
                 let json = try JSONSerialization.data(withJSONObject:replies)
                 let text = "<send_user_message_question_reply>\n"+String(decoding:json,as:UTF8.self)+"\n</send_user_message_question_reply>"
                 let connection = try DesktopSocket()
                 let initial = try connection.call("initialize",params:["clientType":"bailong-pet"],version:0)
-                guard let client = (initial["result"] as? [String:Any])?["clientId"] as? String else {throw PetFailure(message:"Codex 未返回本机连接标识。")}
+                guard let client = (initial["result"] as? [String:Any])?["clientId"] as? String else {throw PetFailure(message:"Codex did not return a local connection ID.")}
                 connection.clientID = client
                 let owner = try connection.call("thread-owner-discovery",params:["hostId":"local","conversationId":thread],version:1)
-                guard let target = owner["handledByClientId"] as? String else {throw PetFailure(message:"未找到原会话窗口，请转到 Codex 回答。")}
+                guard let target = owner["handledByClientId"] as? String else {throw PetFailure(message:"The original chat window was not found. Answer in Codex.")}
                 let input:[[String:Any]] = [["type":"text","text":text,"text_elements":[]]]
                 _ = try connection.call("thread-follower-steer-turn",params:["conversationId":thread,"input":input,
                     "clientUserMessageId":UUID().uuidString,"attachments":[],
@@ -30,7 +30,7 @@ enum DesktopQuestionReply {
 final class DesktopSocket {
     struct RequestFailure:LocalizedError {
         let method:String, code:String
-        var errorDescription:String? {"Codex 请求失败（\(method)）：\(code)"}
+        var errorDescription:String? {"Codex request failed (\(method)): \(code)"}
     }
     private let fd:Int32
     private let timeoutSeconds:Int
@@ -41,11 +41,11 @@ final class DesktopSocket {
         let path = root+"/ipc/ipc.sock"
         var address = sockaddr_un(); address.sun_family = sa_family_t(AF_UNIX)
         let bytes = Array(path.utf8CString)
-        guard bytes.count <= MemoryLayout.size(ofValue:address.sun_path) else {throw PetFailure(message:"Codex 本机通信路径过长。")}
+        guard bytes.count <= MemoryLayout.size(ofValue:address.sun_path) else {throw PetFailure(message:"The local Codex communication path is too long.")}
         var info = stat()
-        guard lstat(path,&info) == 0, info.st_uid == getuid(), info.st_mode & S_IFMT == S_IFSOCK else {throw PetFailure(message:"Codex 本机通信尚未就绪，请打开 Codex 后重试。")}
+        guard lstat(path,&info) == 0, info.st_uid == getuid(), info.st_mode & S_IFMT == S_IFSOCK else {throw PetFailure(message:"Local Codex communication is not ready. Open Codex and try again.")}
         fd = socket(AF_UNIX,SOCK_STREAM,0)
-        guard fd >= 0 else {throw PetFailure(message:"无法创建本机通信连接。")}
+        guard fd >= 0 else {throw PetFailure(message:"Unable to create a local connection.")}
         var timeout = timeval(tv_sec:timeoutSeconds,tv_usec:0), noSignal:Int32 = 1
         setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,socklen_t(MemoryLayout.size(ofValue:timeout)))
         setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&timeout,socklen_t(MemoryLayout.size(ofValue:timeout)))
@@ -64,10 +64,10 @@ final class DesktopSocket {
         while Date() < deadline {
             let value = try receive()
             guard value["requestId"] as? String == id else {continue}
-            guard value["resultType"] as? String == "success" else {throw RequestFailure(method:method,code:value["error"] as? String ?? "请求失败")}
+            guard value["resultType"] as? String == "success" else {throw RequestFailure(method:method,code:value["error"] as? String ?? "Request failed")}
             return value
         }
-        throw PetFailure(message:"Codex 请求超时（\(method)）。")
+        throw PetFailure(message:"Codex request timed out (\(method)).")
     }
     func broadcast(_ method:String,params:[String:Any],version:Int) throws {
         try send(["type":"broadcast","method":method,"sourceClientId":clientID,"params":params,"version":version])
@@ -92,8 +92,8 @@ final class DesktopSocket {
     }
     private func receive() throws -> [String:Any] {
         let header = try read(4), size = header.enumerated().reduce(UInt32(0)) {$0 | UInt32($1.element) << (8*$1.offset)}
-        guard size > 0 && size <= 16*1024*1024 else {throw PetFailure(message:"Codex 本机消息格式不兼容。")}
-        guard let value = try JSONSerialization.jsonObject(with:read(Int(size))) as? [String:Any] else {throw PetFailure(message:"Codex 本机消息格式不兼容。")}
+        guard size > 0 && size <= 16*1024*1024 else {throw PetFailure(message:"Incompatible local Codex message format.")}
+        guard let value = try JSONSerialization.jsonObject(with:read(Int(size))) as? [String:Any] else {throw PetFailure(message:"Incompatible local Codex message format.")}
         return value
     }
     private func read(_ count:Int) throws -> Data {
@@ -102,7 +102,7 @@ final class DesktopSocket {
             var offset = 0
             while offset < count {
                 let got = recv(fd,bytes.baseAddress!.advanced(by:offset),count-offset,0)
-                guard got > 0 else {throw PetFailure(message:got == 0 ? "Codex 本机连接已关闭。" : "Codex 本机通信失败："+String(cString:strerror(errno)))}
+                guard got > 0 else {throw PetFailure(message:got == 0 ? "The local Codex connection closed." : "Local Codex communication failed: "+String(cString:strerror(errno)))}
                 offset += got
             }
         }

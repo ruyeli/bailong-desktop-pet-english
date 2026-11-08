@@ -15,14 +15,14 @@ final class CodexConnection {
     private var closing = false
     private var generation = 0
     private var expiration: Timer?
-    private let reader = DispatchQueue(label:"白龙娘 Codex 协议")
+    private let reader = DispatchQueue(label:"Bailong Codex Protocol")
     private var connectionError: String?
     private(set) var executableURL: URL?
     var isConnected:Bool {ready}
     var diagnostics: String {
-        let state = ready ? "协议已连接" : process?.isRunning == true ? "正在初始化" : (connectionError.map { "连接失败：" + $0 } ?? "未连接")
-        let pid = process.map { $0.isRunning ? String($0.processIdentifier) : "未运行" } ?? "未运行"
-        return "\(state) · 进程 \(executableURL?.lastPathComponent ?? "codex") · PID \(pid) · 待回复 \(pending.count)\n可执行文件：\(executableURL?.path ?? "尚未启动")"
+        let state = ready ? "Protocol connected" : process?.isRunning == true ? "Initializing" : (connectionError.map { "Connection failed: " + $0 } ?? "Not connected")
+        let pid = process.map { $0.isRunning ? String($0.processIdentifier) : "Not running" } ?? "Not running"
+        return "\(state) · Process \(executableURL?.lastPathComponent ?? "codex") · PID \(pid) · Pending \(pending.count)\nExecutable: \(executableURL?.path ?? "Not started")"
     }
     static func desktopApplications() -> [URL] {
         let running = NSWorkspace.shared.runningApplications.compactMap { app -> URL? in
@@ -35,7 +35,7 @@ final class CodexConnection {
     static func executable() throws -> URL {
         let env = ProcessInfo.processInfo.environment
         if let explicit = env["BAILONG_CODEX_BIN"], !explicit.isEmpty {
-            guard FileManager.default.isExecutableFile(atPath:explicit) else {throw PetFailure(message:"指定的 Codex 程序不可执行："+explicit)}
+            guard FileManager.default.isExecutableFile(atPath:explicit) else {throw PetFailure(message:"The specified Codex executable cannot run: "+explicit)}
             return URL(fileURLWithPath:explicit)
         }
         // 优先当前桌面应用内置版本，防止旧 PATH CLI 不支持桌面端当前模型。
@@ -46,7 +46,7 @@ final class CodexConnection {
         let candidates = bundled + (env["PATH"] ?? "").split(separator:":").map {String($0)+"/codex"} +
             [NSHomeDirectory()+"/.local/bin/codex","/opt/homebrew/bin/codex","/usr/local/bin/codex"]
         guard let path = candidates.first(where:{FileManager.default.isExecutableFile(atPath:$0)}) else {
-            throw PetFailure(message:"没有找到可用的 Codex。请安装或更新 Codex 桌面应用并登录，再重试。")
+            throw PetFailure(message:"No usable Codex installation found. Install or update the Codex desktop app, sign in, and try again.")
         }
         return URL(fileURLWithPath:path)
     }
@@ -54,7 +54,7 @@ final class CodexConnection {
         guard let app = desktopApplications().first(where:{FileManager.default.fileExists(atPath:$0.path)}) else {return}
         NSWorkspace.shared.open(app)
     }
-    private static let navigationQueue = DispatchQueue(label:"白龙娘 Codex 会话定位",qos:.userInitiated)
+    private static let navigationQueue = DispatchQueue(label:"Bailong Codex Chat Lookup",qos:.userInitiated)
     static func openConversation(_ id:String?) {
         guard let id,let url = threadURL(id) else {openDesktop(); return}
         navigationQueue.async {
@@ -105,7 +105,7 @@ final class CodexConnection {
                 // 先交付最后一条完成/错误消息，再处理 EOF，避免退出回调抢先丢失结果。
                 DispatchQueue.main.async {
                     guard let self, self.generation == token, !self.closing else {return}
-                    self.fail(PetFailure(message:"Codex 连接已结束，任务状态未确认。"))
+                    self.fail(PetFailure(message:"The Codex connection ended. Task status is unconfirmed."))
                 }
             }
             expiration?.invalidate()
@@ -135,7 +135,7 @@ final class CodexConnection {
             case .failure(let error): completion(.failure(error))
             case .success(let value):
                 guard let thread = (value["thread"] as? [String:Any])?["id"] as? String,!thread.isEmpty else {
-                    completion(.failure(CodexProtocol.Failure.malformed("缺少会话 ID"))); return
+                    completion(.failure(CodexProtocol.Failure.malformed("Missing chat ID"))); return
                 }
                 self?.loadedThreads.insert(thread)
                 completion(.success(thread))
@@ -148,7 +148,7 @@ final class CodexConnection {
         send(["id":serial,"method":method,"params":params])
     }
     func reply(_ id: Any, _ result: [String:Any]) { send(["id":id,"result":result]) }
-    func unsupported(_ id: Any, _ method: String) { send(["id":id,"error":["code":-32601,"message":"此客户端未支持 \(method)"]]) }
+    func unsupported(_ id: Any, _ method: String) { send(["id":id,"error":["code":-32601,"message":"This client does not support \(method)"]]) }
     @discardableResult private func send(_ value:[String:Any]) -> Bool {
         do {
             guard let input else {throw CodexProtocol.Failure.disconnected}
@@ -157,13 +157,13 @@ final class CodexConnection {
         } catch {fail(error); return false}
     }
     func abortUnconfirmedTask() {
-        fail(PetFailure(message:"已关闭桌宠任务连接并回收服务进程；任务最终结果未确认，请在 Codex 核对。"))
+        fail(PetFailure(message:"The pet's task connection is closed and its service process has stopped. The final task result is unconfirmed; check Codex."))
     }
     func reject(_ id:Any,_ message:String) {send(["id":id,"error":["code":-32602,"message":message]])}
     private func receive(_ value: [String:Any]) {
         if let method = value["method"] as? String {
             guard let params = (value["params"] ?? [:]) as? [String:Any] else {
-                if let id = value["id"] {reject(id,"请求缺少参数对象。")} else {fail(CodexProtocol.Failure.malformed("事件缺少参数对象"))}
+                if let id = value["id"] {reject(id,"Request has no parameters object.")} else {fail(CodexProtocol.Failure.malformed("Event has no parameters object"))}
                 return
             }
             do {try CodexProtocol.validate(method,params)}
@@ -174,9 +174,9 @@ final class CodexConnection {
             if method == "thread/closed",let thread = params["threadId"] as? String {loadedThreads.remove(thread)}
             if let id = value["id"] { request(id,method,params) } else { event(method,params) }
         } else if let id = value["id"] as? Int, let (callback,_) = pending.removeValue(forKey:id) {
-            if let error = value["error"] as? [String:Any] { callback(.failure(PetFailure(message:error["message"] as? String ?? "Codex 请求失败"))) }
+            if let error = value["error"] as? [String:Any] { callback(.failure(PetFailure(message:error["message"] as? String ?? "Codex request failed"))) }
             else if let result = value["result"] as? [String:Any] {callback(.success(result))}
-            else {callback(.failure(CodexProtocol.Failure.malformed("回复缺少结果对象")))}
+            else {callback(.failure(CodexProtocol.Failure.malformed("Reply has no result object")))}
         }
     }
     private func fail(_ error: Error) {
