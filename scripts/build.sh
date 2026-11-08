@@ -3,34 +3,34 @@ set -eu
 cd "${0:A:h:h}"
 source scripts/terminal-ui.sh
 if (( $# > 1 )); then
-    print -u2 "用法：$0 [arm64|x86_64]"; exit 2
+    print -u2 "Usage: $0 [arm64|x86_64]"; exit 2
 fi
 source scripts/swift-sources.sh
 target_arch="${1:-arm64}"
 case "$target_arch" in
     arm64|x86_64) ;;
-    *) print -u2 "不支持的架构：$target_arch"; exit 2 ;;
+    *) print -u2 "Unsupported architecture: $target_arch"; exit 2 ;;
 esac
-bailong_header "构建应用包" "$target_arch"
+bailong_header "Build application" "$target_arch"
 assets="local-assets/native-hevc/catalog"
-[[ -f "$assets/素材清单.json" ]] || { print -u2 "缺少原生素材清单。请按 README 的资源获取说明准备 local-assets/native-hevc/catalog。"; exit 1; }
+[[ -f "$assets/素材清单.json" ]] || { print -u2 "Missing native asset catalog. Follow the asset instructions in README to prepare local-assets/native-hevc/catalog."; exit 1; }
 version="$(<VERSION)"
 output="dist/native-hevc/$version/$target_arch"
 mkdir -p ".build/$target_arch" .build/module-cache "$output"
-bailong_phase_begin "1/4" "编译主程序"
+bailong_phase_begin "1/4" "Compile application"
 xcrun swiftc -O -whole-module-optimization -swift-version 5 -target "$target_arch-apple-macosx14.0" \
     -module-cache-path .build/module-cache $swift_sources \
     -o ".build/$target_arch/BailongPet" -framework AppKit -framework AVFoundation -framework CoreImage -framework Metal -lsqlite3 > "$bailong_phase_log" 2>&1
 bailong_phase_end
-bailong_phase_begin "2/4" "编译跟随助手"
+bailong_phase_begin "2/4" "Compile follow helper"
 xcrun swiftc -O -swift-version 5 -target "$target_arch-apple-macosx14.0" \
     -module-cache-path .build/module-cache Sources/BailongPet/Infrastructure/FollowMonitor.swift Tools/FollowHelper/main.swift \
     -framework AppKit -o ".build/$target_arch/BailongFollow" > "$bailong_phase_log" 2>&1
 bailong_phase_end
 
-app="$output/白龙桌宠Swift.app"
+app="$output/Bailong Desktop Pet.app"
 staging="$(mktemp -d "$output/.pet-XXXXXX")"
-bailong_phase_begin "3/4" "组装应用与资源"
+bailong_phase_begin "3/4" "Assemble application and resources"
 {
 mkdir -p "$staging/Contents/MacOS" "$staging/Contents/Resources/outputs/白龙桌宠素材"
 cp ".build/$target_arch/BailongPet" "$staging/Contents/MacOS/BailongPet"
@@ -45,8 +45,8 @@ cat > "$staging/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>com.bailongpet.appkit</string>
-<key>CFBundleName</key><string>白龙桌宠Swift</string>
-<key>CFBundleDisplayName</key><string>白龙桌宠Swift</string>
+<key>CFBundleName</key><string>Bailong Desktop Pet</string>
+<key>CFBundleDisplayName</key><string>Bailong Desktop Pet</string>
 <key>CFBundleExecutable</key><string>BailongPet</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>${version%%-*}</string>
@@ -55,10 +55,10 @@ cat > "$staging/Contents/Info.plist" <<PLIST
 <key>BailongAuthor</key><string>Joseph Blue</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSUIElement</key><true/>
-<key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleAllowMixedLocalizations</key><true/>
 <key>NSHighResolutionCapable</key><true/>
-<key>NSAppleEventsUsageDescription</key><string>点击本机文件链接时，恢复对应的访达窗口并选中文件。</string>
+<key>NSAppleEventsUsageDescription</key><string>Reveal local files and restore their Finder windows when you open a file link.</string>
 <key>CFBundleIconFile</key><string>BailongPet</string>
 </dict></plist>
 PLIST
@@ -70,7 +70,7 @@ cat > "$helper/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>com.bailongpet.appkit.follow-helper</string>
-<key>CFBundleName</key><string>白龙桌宠Swift跟随启动监测器</string>
+<key>CFBundleName</key><string>Bailong Follow Monitor</string>
 <key>BailongAuthor</key><string>Joseph Blue</string>
 <key>CFBundleExecutable</key><string>BailongFollow</string>
 <key>CFBundlePackageType</key><string>APPL</string>
@@ -81,7 +81,7 @@ cat > "$helper/Contents/Info.plist" <<PLIST
 PLIST
 } > "$bailong_phase_log" 2>&1
 bailong_phase_end
-bailong_phase_begin "4/4" "本地签名并保存应用"
+bailong_phase_begin "4/4" "Sign locally and save application"
 {
 codesign --force --sign - "$helper"
 codesign --force --sign - "$staging"
@@ -90,5 +90,5 @@ if [[ -d "$app" ]]; then rm -rf "$app"; fi
 mv "$staging" "$app"
 } > "$bailong_phase_log" 2>&1
 bailong_phase_end
-print "构建完成 · 总用时 $((SECONDS-bailong_started)) 秒"
-bailong_artifact "应用" "$app"
+print "Build complete · Total time $((SECONDS-bailong_started)) s"
+bailong_artifact "Application" "$app"

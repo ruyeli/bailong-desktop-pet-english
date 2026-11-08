@@ -4,11 +4,11 @@ cd "${0:A:h:h}"
 source scripts/terminal-ui.sh
 
 if (( $# > 1 )) || { (( $# == 1 )) && [[ "$1" != "--build-only" ]]; }; then
-    print -u2 "用法：$0 [--build-only]"
+    print -u2 "Usage: $0 [--build-only]"
     exit 2
 fi
 
-bailong_header "开发程序 · 不打包 .app" "arm64"
+bailong_header "Development build · No .app bundle" "arm64"
 source scripts/swift-sources.sh
 binary=".build/dev/BailongPetDev"
 mkdir -p .build/dev .build/module-cache
@@ -21,7 +21,7 @@ for source in $swift_sources VERSION scripts/swift-sources.sh "${0:A}"; do
 done
 
 if (( rebuild )); then
-    bailong_phase_begin "1/1" "编译开发程序"
+    bailong_phase_begin "1/1" "Compile development build"
     {
     version="$(<VERSION)"
     # 将应用身份与系统语言设置嵌入可执行文件，直接运行也使用原生框架本地化。
@@ -30,13 +30,13 @@ if (( rebuild )); then
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>com.bailongpet.appkit</string>
-<key>CFBundleName</key><string>白龙桌宠Swift（开发）</string>
+<key>CFBundleName</key><string>Bailong Desktop Pet (Development)</string>
 <key>CFBundleVersion</key><string>${version%%-*}</string>
-<key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleAllowMixedLocalizations</key><true/>
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>
-<key>NSAppleEventsUsageDescription</key><string>点击本机文件链接时，恢复对应的访达窗口并选中文件。</string>
+<key>NSAppleEventsUsageDescription</key><string>Reveal local files and restore their Finder windows when you open a file link.</string>
 </dict></plist>
 PLIST
     xcrun swiftc -O -whole-module-optimization -swift-version 5 \
@@ -49,15 +49,15 @@ PLIST
     } > "$bailong_phase_log" 2>&1
     bailong_phase_end
 else
-    print "源码未变化，复用上次编译结果。"
+    print "Source unchanged; reusing previous build."
 fi
 
-bailong_artifact "开发程序" "$binary"
+bailong_artifact "Development binary" "$binary"
 if [[ "${1:-}" == "--build-only" ]]; then
-    print "编译完成 · 总用时 $((SECONDS-bailong_started)) 秒"
+    print "Compilation complete · Total time $((SECONDS-bailong_started)) s"
     exit 0
 fi
-[[ -f "local-assets/native-hevc/catalog/素材清单.json" ]] || { print -u2 "请先按 README 准备 local-assets/native-hevc/catalog 原生素材。"; exit 1; }
-print "启动开发程序，按 Ctrl+C 停止。"
+[[ -f "local-assets/native-hevc/catalog/素材清单.json" ]] || { print -u2 "Prepare local-assets/native-hevc/catalog as described in README first."; exit 1; }
+print "Starting development build. Press Ctrl+C to stop."
 export BAILONG_DEV_RUN=1
 exec "$binary"
