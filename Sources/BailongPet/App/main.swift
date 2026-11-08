@@ -58,12 +58,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             RecoveryWindow.resolve("startup")
             if let previous = unfinishedRun {
                 unfinishedRun = nil
-                let started = previous.started?.formatted(date:.numeric,time:.standard) ?? "未记录"
-                RecoveryWindow.show(id:"previous-run",report:RecoveryReport(title:"上次运行未正常结束",message:"应用已重新启动。请检查任务状态；未完成的任务不会自动重新执行。",module:"运行状态",operation:"检查上次退出记录",facts:["上次版本："+previous.version,"上次启动："+started,"退出原因：未记录正常退出，无法据此区分崩溃、强制退出或断电。"]),actionTitle:"继续使用") {RecoveryWindow.resolve("previous-run")}
+                let started = previous.started?.formatted(date:.numeric,time:.standard) ?? "Not recorded"
+                RecoveryWindow.show(id:"previous-run",report:RecoveryReport(title:"The previous session did not end normally",message:"The app has restarted. Check task status; unfinished tasks will not run again automatically.",module:"Run status",operation:"Check previous exit record",facts:["Last version: "+previous.version,"Last launch: "+started,"Exit reason: no normal exit was recorded. This does not distinguish a crash, forced quit, or power loss."]),actionTitle:"Continue") {RecoveryWindow.resolve("previous-run")}
             }
             if PetPreferences.shared.bool("automaticallyCheckUpdates") {UpdateChecker.shared.check(automatically:true)}
         } catch {
-            RecoveryWindow.show(id:"startup",report:RecoveryReport(title:"应用初始化未完成",message:"请确认数据目录可写、应用资源完整，然后重新初始化。现有设置和历史不会被清空。",module:"应用启动",operation:"初始化数据目录与素材",error:error),actionTitle:"重新初始化") { [weak self] in self?.startApplication() }
+            RecoveryWindow.show(id:"startup",report:RecoveryReport(title:"App initialization incomplete",message:"Check that the data folder is writable and app resources are complete, then initialize again. Existing settings and history will be retained.",module:"App startup",operation:"Initialize data folder and assets",error:error),actionTitle:"Initialize Again") { [weak self] in self?.startApplication() }
         }
     }
     private func loadChat() {
@@ -72,19 +72,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let chat = try ChatController(pet:pet); self.chat = chat
             let sync = DesktopSync(chat:chat); self.sync = sync
             pet.settings.onClearLocalData = { [weak chat,weak sync] in
-                guard let chat,let sync else {throw PetFailure(message:"数据管理已停止。")}
+                guard let chat,let sync else {throw PetFailure(message:"Data management has stopped.")}
                 try chat.clearLocalData(); sync.clearLocalProjection()
             }
-            pet.syncDiagnostics = { [weak sync] in sync?.diagnostics ?? "已停止" }
-            pet.syncStatus = { [weak sync] in sync?.status ?? "任务同步已停止，当前不会读取新的任务状态。" }
+            pet.syncDiagnostics = { [weak sync] in sync?.diagnostics ?? "Stopped" }
+            pet.syncStatus = { [weak sync] in sync?.status ?? "Task synchronization has stopped. New task status is not being read." }
             RecoveryWindow.resolve("history-load")
         } catch {
-            pet.syncDiagnostics = { "会话初始化未完成" }
-            pet.syncStatus = { "会话初始化未完成，任务同步尚未启动。请打开历史会话重新读取。\n\n"+error.localizedDescription }
-            pet.bubble.taskProvider = {BubbleTaskOverview(status:"任务同步未启动，请打开历史会话重试")}
+            pet.syncDiagnostics = { "Conversation initialization incomplete" }
+            pet.syncStatus = { "Conversation initialization is incomplete and task sync has not started. Open History to reload.\n\n"+error.localizedDescription }
+            pet.bubble.taskProvider = {BubbleTaskOverview(status:"Task sync has not started. Open History to retry.")}
             pet.onHistory = { [weak self] _ in self?.loadChat(); RecoveryWindow.revealAll() }
             pet.onComposer = { [weak self] in self?.loadChat(); RecoveryWindow.revealAll() }
-            RecoveryWindow.show(id:"history-load",report:RecoveryReport(title:"对话数据未能加载",message:"历史原文件保留，对话和任务同步尚未启动。修复文件格式或读取权限后，可重新读取。",module:"会话数据",operation:"读取历史与初始化任务目录",error:error),actionTitle:"重新读取") { [weak self] in self?.loadChat() }
+            RecoveryWindow.show(id:"history-load",report:RecoveryReport(title:"Unable to load conversation data",message:"The original history file is retained. Chats and task sync have not started. Correct the file format or read permissions, then reload.",module:"Conversation data",operation:"Read history and initialize workspace",error:error),actionTitle:"Reload") { [weak self] in self?.loadChat() }
         }
     }
     func installTerminationSignals() {
@@ -95,7 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             source.setEventHandler { [weak self] in
                 guard let self, !self.terminationRequested else{return}
                 self.terminationRequested = true
-                if ProcessInfo.processInfo.environment["BAILONG_DEV_RUN"] == "1" {print("正在退出并回收桌宠子进程…")}
+                if ProcessInfo.processInfo.environment["BAILONG_DEV_RUN"] == "1" {print("Quitting and cleaning up pet subprocesses…")}
                 self.quitFromMenu()
             }
             terminationSignals.append(source); source.resume()
@@ -104,38 +104,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func installMenuBar() {
         let bar = NSMenu()
         let appItem = NSMenuItem(); let appMenu = NSMenu(); appItem.submenu = appMenu; bar.addItem(appItem)
-        let about = NSMenuItem(title:"关于"+PetPreferences.shared.appName,action:#selector(showAbout),keyEquivalent:""); about.target = self; about.tag = 101; appMenu.addItem(about)
+        let about = NSMenuItem(title:"About "+PetPreferences.shared.appName,action:#selector(showAbout),keyEquivalent:""); about.target = self; about.tag = 101; appMenu.addItem(about)
         appMenu.addItem(.separator())
-        appMenu.addItem(MenuAction("检查更新…",symbol:"arrow.triangle.2.circlepath") {UpdateWindow.show()})
-        let settings = NSMenuItem(title:"设置…",action:#selector(showSettings),keyEquivalent:","); settings.target = self
+        appMenu.addItem(MenuAction("Check for Updates…",symbol:"arrow.triangle.2.circlepath") {UpdateWindow.show()})
+        let settings = NSMenuItem(title:"Settings…",action:#selector(showSettings),keyEquivalent:","); settings.target = self
         settings.image = NSImage(systemSymbolName:"gearshape",accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:14,weight:.regular))
         appMenu.addItem(settings)
         appMenu.addItem(.separator())
-        let close = NSMenuItem(title:"关闭当前窗口",action:#selector(closeInterface),keyEquivalent:"q"); close.target = self; appMenu.addItem(close)
-        let closeWindow = NSMenuItem(title:"关闭窗口",action:#selector(closeInterface),keyEquivalent:"w"); closeWindow.target = self; appMenu.addItem(closeWindow)
-        let quit = NSMenuItem(title:"退出"+PetPreferences.shared.appName,action:#selector(quitFromMenu),keyEquivalent:""); quit.target = self; quit.tag = 102; quit.image = NSImage(systemSymbolName:"rectangle.portrait.and.arrow.right",accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:14,weight:.regular)); appMenu.addItem(quit)
-        let editItem = NSMenuItem(title:"编辑",action:nil,keyEquivalent:""); let edit = NSMenu(title:"编辑"); editItem.submenu = edit; bar.addItem(editItem)
-        for (title,action,key) in [("撤销","undo:","z"),("重做","redo:","Z"),("剪切","cut:","x"),("拷贝","copy:","c"),("粘贴","paste:","v"),("全选","selectAll:","a")] {
+        let close = NSMenuItem(title:"Close Current Window",action:#selector(closeInterface),keyEquivalent:"q"); close.target = self; appMenu.addItem(close)
+        let closeWindow = NSMenuItem(title:"Close Window",action:#selector(closeInterface),keyEquivalent:"w"); closeWindow.target = self; appMenu.addItem(closeWindow)
+        let quit = NSMenuItem(title:"Quit "+PetPreferences.shared.appName,action:#selector(quitFromMenu),keyEquivalent:""); quit.target = self; quit.tag = 102; quit.image = NSImage(systemSymbolName:"rectangle.portrait.and.arrow.right",accessibilityDescription:nil)?.withSymbolConfiguration(.init(pointSize:14,weight:.regular)); appMenu.addItem(quit)
+        let editItem = NSMenuItem(title:"Edit",action:nil,keyEquivalent:""); let edit = NSMenu(title:"Edit"); editItem.submenu = edit; bar.addItem(editItem)
+        for (title,action,key) in [("Undo","undo:","z"),("Redo","redo:","Z"),("Cut","cut:","x"),("Copy","copy:","c"),("Paste","paste:","v"),("Select All","selectAll:","a")] {
             edit.addItem(NSMenuItem(title:title,action:NSSelectorFromString(action),keyEquivalent:key))
         }
-        let conversation = NSMenuItem(title:"对话",action:nil,keyEquivalent:""); let commands = NSMenu(title:"对话"); conversation.submenu = commands; bar.addItem(conversation)
-        commands.addItem(MenuAction("打开对话",symbol:"bubble.left.and.bubble.right") { [weak self] in self?.chat?.toggleComposer() })
-        commands.addItem(MenuAction("新对话") { [weak self] in self?.chat?.newConversation(); self?.chat?.showHistory(nil) })
-        commands.addItem(MenuAction("选择任务文件夹…") { [weak self] in self?.chat?.chooseFolder() })
-        commands.addItem(MenuAction("历史对话",symbol:"clock") { [weak self] in self?.chat?.showHistory(nil) })
-        let windowsItem = NSMenuItem(title:"窗口",action:nil,keyEquivalent:"")
-        let windows = NSMenu(title:"窗口"); windowsItem.submenu = windows; bar.addItem(windowsItem)
-        windows.addItem(MenuAction("应用性能信息统计",symbol:"chart.xyaxis.line") { [weak self] in self?.pet?.showDiagnostics() })
-        windows.addItem(MenuAction("错误与恢复",symbol:"exclamationmark.triangle") {RecoveryWindow.revealAll()})
-        windows.addItem(NSMenuItem(title:"最小化",action:#selector(NSWindow.performMiniaturize(_:)),keyEquivalent:"m"))
+        let conversation = NSMenuItem(title:"Chat",action:nil,keyEquivalent:""); let commands = NSMenu(title:"Chat"); conversation.submenu = commands; bar.addItem(conversation)
+        commands.addItem(MenuAction("Open Chat",symbol:"bubble.left.and.bubble.right") { [weak self] in self?.chat?.toggleComposer() })
+        commands.addItem(MenuAction("New Chat") { [weak self] in self?.chat?.newConversation(); self?.chat?.showHistory(nil) })
+        commands.addItem(MenuAction("Choose Workspace Folder…") { [weak self] in self?.chat?.chooseFolder() })
+        commands.addItem(MenuAction("Chat History",symbol:"clock") { [weak self] in self?.chat?.showHistory(nil) })
+        let windowsItem = NSMenuItem(title:"Window",action:nil,keyEquivalent:"")
+        let windows = NSMenu(title:"Window"); windowsItem.submenu = windows; bar.addItem(windowsItem)
+        windows.addItem(MenuAction("App Performance Monitor",symbol:"chart.xyaxis.line") { [weak self] in self?.pet?.showDiagnostics() })
+        windows.addItem(MenuAction("Errors & Recovery",symbol:"exclamationmark.triangle") {RecoveryWindow.revealAll()})
+        windows.addItem(NSMenuItem(title:"Minimize",action:#selector(NSWindow.performMiniaturize(_:)),keyEquivalent:"m"))
         windows.addItem(.separator()); NSApp.windowsMenu = windows
         bar.showProvidedImages(); NSApp.mainMenu = bar
     }
     @objc func updateNames() {
         let name = PetPreferences.shared.appName
         let menu = NSApp.mainMenu?.items.first?.submenu
-        menu?.item(withTag:101)?.title = "关于"+name
-        menu?.item(withTag:102)?.title = "退出"+name
+        menu?.item(withTag:101)?.title = "About "+name
+        menu?.item(withTag:102)?.title = "Quit "+name
     }
     @objc func showSettings() {pet?.showSettings()}
     @objc func showAbout() {pet?.showSettings(section:.about)}
@@ -170,11 +170,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         let menu = NSMenu()
-        menu.addItem(MenuAction("设置…",symbol:"gearshape") { [weak self] in self?.pet?.showSettings() })
-        menu.addItem(MenuAction("应用性能信息统计") { [weak self] in self?.pet?.showDiagnostics() })
-        menu.addItem(MenuAction("历史对话",symbol:"clock") { [weak self] in self?.chat?.showHistory(nil) })
-        if RecoveryWindow.hasIssues {menu.addItem(MenuAction("错误与恢复") {RecoveryWindow.revealAll()})}
-        menu.addItem(MenuAction("打开对话",symbol:"bubble.left.and.bubble.right") { [weak self] in self?.chat?.toggleComposer() })
+        menu.addItem(MenuAction("Settings…",symbol:"gearshape") { [weak self] in self?.pet?.showSettings() })
+        menu.addItem(MenuAction("App Performance Monitor") { [weak self] in self?.pet?.showDiagnostics() })
+        menu.addItem(MenuAction("Chat History",symbol:"clock") { [weak self] in self?.chat?.showHistory(nil) })
+        if RecoveryWindow.hasIssues {menu.addItem(MenuAction("Errors & Recovery") {RecoveryWindow.revealAll()})}
+        menu.addItem(MenuAction("Open Chat",symbol:"bubble.left.and.bubble.right") { [weak self] in self?.chat?.toggleComposer() })
         return menu
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {false}

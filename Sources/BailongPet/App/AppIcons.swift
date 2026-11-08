@@ -51,7 +51,7 @@ enum AppIcons {
             face.move(to:NSPoint(x:6,y:8)); face.curve(to:NSPoint(x:16,y:8),controlPoint1:NSPoint(x:8.5,y:5.5),controlPoint2:NSPoint(x:13.5,y:5.5)); face.stroke()
             return true
         }
-        image.isTemplate = true; image.accessibilityDescription = "访达中打开"
+        image.isTemplate = true; image.accessibilityDescription = "Open in Finder"
         return image
     }()
 }
