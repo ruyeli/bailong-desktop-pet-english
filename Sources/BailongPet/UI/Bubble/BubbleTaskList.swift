@@ -53,12 +53,12 @@ final class BubbleTaskList: NSView {
         overview = incoming; recentLimit = limit; progressTemplates = templates
         let records = incoming.tasks; let previousRows = rows; subviews.forEach {$0.removeFromSuperview()}; rows = []
         var y:CGFloat = 0
-        for (index,section) in [("正在执行的任务：",records.filter(\.active)),("近期执行结束的任务：",Array(records.filter {!$0.active}.prefix(limit)))].enumerated() {
+        for (index,section) in [("Running tasks:",records.filter(\.active)),("Recently ended tasks:",Array(records.filter {!$0.active}.prefix(limit)))].enumerated() {
             if index > 0 {y += 14*scale}
             let heading = label(section.0,bold:true); heading.font = .systemFont(ofSize:12*scale,weight:.medium)
             heading.frame = NSRect(x:0,y:y,width:bounds.width,height:22*scale); addSubview(heading); y += 26*scale
             if section.1.isEmpty {
-                let empty = label(incoming.status ?? (index == 0 ? "暂无正在执行的任务" : "暂无近期结束的任务"))
+                let empty = label(incoming.status ?? (index == 0 ? "No running tasks" : "No recent completed tasks"))
                 empty.font = .systemFont(ofSize:11*scale); empty.textColor = .secondaryLabelColor
                 let height = max(22*scale,empty.cell!.cellSize(forBounds:NSRect(x:0,y:0,width:bounds.width,height:.greatestFiniteMagnitude)).height.rounded(.up))
                 empty.frame = NSRect(x:0,y:y,width:bounds.width,height:height); addSubview(empty); y += height
@@ -95,11 +95,11 @@ private final class BubbleTaskRow:NSButton,LinkCursorControl {
         name.font = .systemFont(ofSize:12*scale); name.lineBreakMode = .byTruncatingTail; name.maximumNumberOfLines = 1
         spinner.font = .monospacedSystemFont(ofSize:12*scale,weight:.medium)
         elapsed.font = .monospacedDigitSystemFont(ofSize:11*scale,weight:.regular); elapsed.alignment = .right
-        watch.image = NSImage(systemSymbolName:"stopwatch",accessibilityDescription:"用时")
+        watch.image = NSImage(systemSymbolName:"stopwatch",accessibilityDescription:"Duration")
         activity.stringValue = task.activityLine ?? ""; activity.font = .systemFont(ofSize:11*scale); activity.textColor = .secondaryLabelColor
         activity.isHidden = task.activityLine == nil
         for view in [spinner,name,elapsed,watch,stateIcon,jump,activity] as [NSView] {addSubview(view)}
-        jump.image = NSImage(systemSymbolName:"arrow.up.right",accessibilityDescription:"在 Codex 中打开")
+        jump.image = NSImage(systemSymbolName:"arrow.up.right",accessibilityDescription:"Open in Codex")
         jump.contentTintColor = .tertiaryLabelColor
         update(task)
     }
@@ -110,9 +110,9 @@ private final class BubbleTaskRow:NSButton,LinkCursorControl {
         activity.stringValue = task.activityLine ?? ""; activity.isHidden = task.activityLine == nil
         let symbol = task.status == "completed" ? "checkmark.circle.fill" : task.status == "failed" ? "exclamationmark.triangle.fill" : "xmark.circle.fill"
         stateIcon.image = NSImage(systemSymbolName:symbol,accessibilityDescription:nil)
-        hoverHelp = [name.stringValue,task.activity?.text,"在 Codex 中打开"].compactMap {$0}.joined(separator:"\n")
-        let state = task.active ? "执行中" : task.status == "completed" ? "已完成" : task.status == "failed" ? "失败" : ["cancelled","canceled"].contains(task.status) ? "用户取消" : "已中断"
-        setAccessibilityLabel(name.stringValue+"，"+(task.activityLine ?? state)+"，转到 Codex")
+        hoverHelp = [name.stringValue,task.activity?.text,"Open in Codex"].compactMap {$0}.joined(separator:"\n")
+        let state = task.active ? "Running" : task.status == "completed" ? "Completed" : task.status == "failed" ? "Failed" : ["cancelled","canceled"].contains(task.status) ? "Canceled by user" : "Interrupted"
+        setAccessibilityLabel(name.stringValue+", "+(task.activityLine ?? state)+", open in Codex")
     }
     func stopMotion() {activity.stop(); restoreTitle()}
     private func restoreTitle() {

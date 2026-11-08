@@ -38,7 +38,7 @@ final class QuestionForm: NSView {
     }
     var isLast:Bool {currentIndex == questions.count-1}
     var complete:Bool {isLast && questions.enumerated().allSatisfy {skipped.contains($0.element.id) || !answer(at:$0.offset).isEmpty}}
-    var actionTitle:String {isLast ? (answers.isEmpty && complete ? "关闭" : "提交回答") : "下一题"}
+    var actionTitle:String {isLast ? (answers.isEmpty && complete ? "Close" : "Submit Answers") : "Next Question"}
     var canAdvance:Bool {enabled && (isLast ? complete : !answer(at:currentIndex).isEmpty || skipped.contains(questions[currentIndex].id))}
     init(questions:[TaskQuestion],width:CGFloat,scale:CGFloat,fontSize:CGFloat) {
         self.questions = questions; self.scale = scale; self.fontSize = fontSize
@@ -47,10 +47,10 @@ final class QuestionForm: NSView {
             for oi in 0..<(q.options.isEmpty ? 0 : q.options.count+1) {
                 let button = AccentChoiceButton(title:"",type:.radio); button.target = self; button.action = #selector(selectOption(_:))
                 button.identifier = .init(q.id); button.tag = qi*1000+oi
-                button.setAccessibilityLabel(oi < q.options.count ? q.options[oi].title : "其他"); radios.append(button)
+                button.setAccessibilityLabel(oi < q.options.count ? q.options[oi].title : "Other"); radios.append(button)
             }
             let input = MessageEditor(frame:NSRect(x:0,y:0,width:width,height:80*scale))
-            input.placeholder = q.options.isEmpty ? "输入回答" : "其他回答或补充说明"
+            input.placeholder = q.options.isEmpty ? "Enter answer" : "Other answer or additional details"
             input.font = .systemFont(ofSize:fontSize); input.textColor = .labelColor; input.backgroundColor = .textBackgroundColor
             input.isRichText = false; input.allowsUndo = true
             input.isAutomaticQuoteSubstitutionEnabled = false; input.isAutomaticDashSubstitutionEnabled = false
@@ -59,7 +59,7 @@ final class QuestionForm: NSView {
             input.textContainer?.containerSize = NSSize(width:width,height:CGFloat.greatestFiniteMagnitude)
             input.textContainerInset = NSSize(width:6*scale,height:6*scale)
             input.minSize = .zero; input.maxSize = NSSize(width:CGFloat.greatestFiniteMagnitude,height:CGFloat.greatestFiniteMagnitude)
-            input.setAccessibilityLabel(q.prompt+"：输入回答")
+            input.setAccessibilityLabel(q.prompt+": Enter answer")
             input.onTextChange = { [weak self] in self?.changedInput(qi) }
             input.send = { [weak self] in self?.advance() }
             let scroll = GutterScrollView(); scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
@@ -108,13 +108,13 @@ final class QuestionForm: NSView {
             field.frame.size = NSSize(width:width,height:ceil(field.cell!.cellSize(forBounds:NSRect(x:0,y:0,width:width,height:100000)).height))
             return field
         }
-        let page = text("第 \(qi+1) / \(questions.count) 题"+(skipped.contains(q.id) ? " · 已跳过" : ""),11*scale,usable,true)
+        let page = text("Question \(qi+1) of \(questions.count)"+(skipped.contains(q.id) ? " · Skipped" : ""),11*scale,usable,true)
         pageLabel = page; page.frame.origin = NSPoint(x:inset,y:y); add(page); y += page.frame.height+10*scale
         let prompt = text(q.prompt,fontSize,usable); prompt.frame.origin = NSPoint(x:inset,y:y); add(prompt); y += prompt.frame.height+8*scale
         for (oi,option) in q.options.enumerated() {
             let button = radios.first {$0.tag == qi*1000+oi}!
             let x = inset+24*scale
-            let name = QuestionOptionLabel(wrappingLabelWithString:"\(oi+1). "+option.title+(option.recommended ? "（推荐）" : ""))
+            let name = QuestionOptionLabel(wrappingLabelWithString:"\(oi+1). "+option.title+(option.recommended ? " (Recommended)" : ""))
             name.font = .systemFont(ofSize:fontSize)
             name.frame.size = NSSize(width:usable-24*scale,height:ceil(name.cell!.cellSize(forBounds:NSRect(x:0,y:0,width:usable-24*scale,height:100000)).height))
             name.select = { [weak button] in button?.performClick(nil) }
@@ -129,7 +129,7 @@ final class QuestionForm: NSView {
         }
         if !q.options.isEmpty {
             let button = radios.first {$0.tag == qi*1000+q.options.count}!
-            button.title = "其他"; button.font = .systemFont(ofSize:fontSize)
+            button.title = "Other"; button.font = .systemFont(ofSize:fontSize)
             button.frame = NSRect(x:inset,y:y,width:usable,height:24*scale); button.isHidden = false; addSubview(button); y += 28*scale
         }
         let editor = editors[qi]; editor.frame = NSRect(x:inset,y:y,width:usable,height:80*scale)
@@ -162,7 +162,7 @@ final class QuestionForm: NSView {
         guard enabled else {return}
         let qi = sender.tag/1000, oi = sender.tag%1000, q = questions[qi]
         skipped.remove(q.id); refreshPageLabel(); selected[q.id] = oi < q.options.count ? q.options[oi].title : nil
-        inputs[qi].placeholder = oi < q.options.count ? "补充说明（可选）" : "输入回答"
+        inputs[qi].placeholder = oi < q.options.count ? "Additional details (optional)" : "Enter answer"
         for button in radios where button.identifier == sender.identifier {button.state = button === sender ? .on : .off}
         onChange()
     }
@@ -174,13 +174,13 @@ final class QuestionForm: NSView {
         onChange()
     }
     private func refreshPageLabel() {
-        pageLabel?.stringValue = "第 \(currentIndex+1) / \(questions.count) 题"+(skipped.contains(questions[currentIndex].id) ? " · 已跳过" : "")
+        pageLabel?.stringValue = "Question \(currentIndex+1) of \(questions.count)"+(skipped.contains(questions[currentIndex].id) ? " · Skipped" : "")
     }
     private func setEnabled(_ value:Bool) {
         enabled = value
         for radio in radios {radio.isEnabled = value}
         for input in inputs {input.isEditable = value}
-        for button in generated.compactMap({$0 as? NSButton}) {button.isEnabled = value && (button.title != "上一题" || currentIndex > 0)}
+        for button in generated.compactMap({$0 as? NSButton}) {button.isEnabled = value && (button.title != "Previous question" || currentIndex > 0)}
     }
 }
 

@@ -46,7 +46,7 @@ final class Bubble {
     private var isBrowsingCards:Bool {cardStore.isBrowsingCards}
     private var submittingQuestion:Bool {questionForm?.isSubmitting == true}
     var onCardLayout:() -> Void = {}
-    var taskProvider:() -> BubbleTaskOverview = {BubbleTaskOverview(status:"任务同步尚未初始化")}
+    var taskProvider:() -> BubbleTaskOverview = {BubbleTaskOverview(status:"Task sync is not initialized")}
     private var taskList:BubbleTaskList?
     private let countdown = BubbleCountdown()
     private var headingTimer: Timer?
@@ -184,7 +184,7 @@ final class Bubble {
         if changedCard {scroll.showTop()}
         if card.showsTaskOverview && preferences.bool("showTaskOverview") {
             let list = BubbleTaskList(width:bodyLayout.contentWidth,scale:scale*preferences.number("messageFontSize")/13,provider:{ [weak self] in
-                self?.taskProvider() ?? BubbleTaskOverview(status:"任务同步已停止")
+                self?.taskProvider() ?? BubbleTaskOverview(status:"Task sync stopped")
             })
             taskList = list
             list.onResize = { [weak self,weak list] height in
@@ -232,7 +232,7 @@ final class Bubble {
         }
         scroll.setBody(text,height:0)
         closeButton.onClose = { [weak self] in self?.hide(); self?.onClose() }
-        details = ActionButton("查看记录详情") { [weak self] in
+        details = ActionButton("View Details") { [weak self] in
             guard let self else{return}
             if let form = self.questionForm,let submit = self.onQuestionSubmit {
                 if !form.isLast {form.advance(); return}
@@ -241,7 +241,7 @@ final class Bubble {
                 if form.answers.isEmpty {self.onQuestionsSkipped?(form.skippedIDs); self.resolveQuestions(taskKey:self.questionTaskKey); return}
                 let taskKey = self.questionTaskKey, skipped = self.onQuestionsSkipped
                 form.isSubmitting = true; self.updateCardNavigation()
-                self.previousQuestion.isEnabled = false; self.skipQuestion.isEnabled = false; self.details.isEnabled = false; self.details.title = "正在提交…"
+                self.previousQuestion.isEnabled = false; self.skipQuestion.isEnabled = false; self.details.isEnabled = false; self.details.title = "Submitting…"
                 submit(form.answers) { [weak self,weak form] error in
                     guard let self,let form else {return}
                     form.isSubmitting = false; self.updateCardNavigation()
@@ -250,7 +250,7 @@ final class Bubble {
                             self.previousQuestion.isEnabled = form.canGoBack; self.skipQuestion.isEnabled = form.canSkip
                             self.details.isEnabled = form.canAdvance; self.details.title = form.actionTitle
                         }
-                        showError("回答未提交",error)
+                        showError("Answer not submitted",error)
                     } else {
                         skipped?(form.skippedIDs); self.resolveQuestions(taskKey:taskKey,form:form)
                     }
@@ -260,8 +260,8 @@ final class Bubble {
             let action = self.onDetails
             self.hide(); self.onClose(); action()
         }
-        approvalReject = ActionButton("拒绝") { [weak self] in self?.submitApproval(false) }
-        approvalAllow = ActionButton("允许这一次") { [weak self] in self?.submitApproval(true) }
+        approvalReject = ActionButton("Deny") { [weak self] in self?.submitApproval(false) }
+        approvalAllow = ActionButton("Allow Once") { [weak self] in self?.submitApproval(true) }
         for button in [approvalReject!,approvalAllow!] {
             button.acceptsKeyboardActivation = false; button.keyEquivalent = ""
             button.imagePosition = .imageLeading
@@ -272,30 +272,30 @@ final class Bubble {
         approvalReject.isHidden = true; approvalAllow.isHidden = true
         previousCard = ActionButton("") { [weak self] in self?.navigateCard(-1) }
         nextCard = ActionButton("") { [weak self] in self?.navigateCard(1) }
-        replyButton = ActionButton("快捷回复") { [weak self] in
+        replyButton = ActionButton("Quick Reply") { [weak self] in
             guard let self,let index = self.cardIndex,let action = self.cards[index].reply else {return}
             self.hide(); action()
         }
         replyButton.keepsAccentWhenInactive = true; replyButton.emphasize()
-        for (button,symbol,name) in [(previousCard!,"chevron.left","上一条消息"),(nextCard!,"chevron.right","下一条消息")] {
+        for (button,symbol,name) in [(previousCard!,"chevron.left","Previous message"),(nextCard!,"chevron.right","Next message")] {
             button.image = NSImage(systemSymbolName:symbol,accessibilityDescription:name)
             button.imagePosition = .imageOnly; button.setAccessibilityLabel(name)
         }
         cardCount.font = .monospacedDigitSystemFont(ofSize:11,weight:.regular); cardCount.textColor = .secondaryLabelColor; cardCount.alignment = .center
         [previousCard!,nextCard!,replyButton!,cardCount].forEach {$0.isHidden = true}
-        previousQuestion = ActionButton("上一题") { [weak self] in self?.questionForm?.previousPage() }
-        skipQuestion = ActionButton("跳过") { [weak self] in self?.questionForm?.skipPage() }
+        previousQuestion = ActionButton("Previous question") { [weak self] in self?.questionForm?.previousPage() }
+        skipQuestion = ActionButton("Skip") { [weak self] in self?.questionForm?.skipPage() }
         previousQuestion.isHidden = true; skipQuestion.isHidden = true
         details.keepsAccentWhenInactive = true
-        codexButton = ActionButton("转到 Codex") { [weak self] in
+        codexButton = ActionButton("Go to Codex") { [weak self] in
             guard let self else {return}
             let action = self.onCodex
             self.hide(); self.onClose(); action()
         }
         codexButton.image = AppIcons.openAI; codexButton.imagePosition = .imageLeading; codexButton.imageScaling = .scaleProportionallyDown
         codexButton.keepsAccentWhenInactive = true
-        retryButton = ActionButton("重试") {}; retryButton.keepsAccentWhenInactive = true; retryButton.emphasize(); retryButton.isHidden = true
-        elapsedIcon.image = NSImage(systemSymbolName:"stopwatch",accessibilityDescription:"任务已处理时间")
+        retryButton = ActionButton("Retry") {}; retryButton.keepsAccentWhenInactive = true; retryButton.emphasize(); retryButton.isHidden = true
+        elapsedIcon.image = NSImage(systemSymbolName:"stopwatch",accessibilityDescription:"Task elapsed time")
         elapsedIcon.contentTintColor = .secondaryLabelColor
         elapsedLabel.alignment = .right; elapsedLabel.textColor = .secondaryLabelColor
         elapsedIcon.isHidden = true; elapsedLabel.isHidden = true
@@ -325,7 +325,8 @@ final class Bubble {
             let countWidth = ("\(count) / \(count)" as NSString).size(withAttributes:[.font:cardCount.font!]).width.rounded(.up)
             column = max(column,2*(buttonHeight+gap)+countWidth)
         }
-        let questionWidth = previousQuestion.isHidden ? 0 : 32*scale+2*gap+3*([previousQuestion!,skipQuestion!,details!].map {$0.intrinsicContentSize.width}.max() ?? 0)
+        let questionButtonWidth: CGFloat = [previousQuestion!,skipQuestion!,details!].map {$0.intrinsicContentSize.width}.max() ?? 0
+        let questionWidth: CGFloat = previousQuestion.isHidden ? 0 : CGFloat(32*scale+2*gap)+3*questionButtonWidth
         return max(usesCustomAspect ? aspectWidth : 320*scale,320*scale,32*scale+gap+2*column,questionWidth)
     }
     private var layoutWidth:CGFloat {min(max(questionSize?.width ?? 0,minimumLayoutWidth),kind == "progressToast" ? 360*scale : .greatestFiniteMagnitude,placementArea?.width ?? .greatestFiniteMagnitude)}
@@ -361,7 +362,7 @@ final class Bubble {
             if hasElapsed {self.layoutElapsed(in:size)}
             let closeSide = 24*scale
             self.closeButton.frame = NSRect(x:margin-2*scale,y:height-margin-firstLineHeight/2-closeSide/2,width:closeSide,height:closeSide)
-            self.closeButton.image = NSImage(systemSymbolName:"xmark",accessibilityDescription:"关闭气泡")?.withSymbolConfiguration(.init(pointSize:13*scale,weight:.regular))
+            self.closeButton.image = NSImage(systemSymbolName:"xmark",accessibilityDescription:"Close bubble")?.withSymbolConfiguration(.init(pointSize:13*scale,weight:.regular))
             let textHeight = max(0,height-chromeHeight)
             let viewport = bodyLayout.viewport(y:margin+footer,height:ceil(textHeight))
             self.scroll.setViewport(viewport)
@@ -375,7 +376,8 @@ final class Bubble {
             self.skipQuestion.frame = NSRect(x:margin+columnWidth+gap,y:actionY+buttonHeight+gap,width:columnWidth,height:buttonHeight)
             self.previousCard.frame = NSRect(x:margin,y:navigationY,width:buttonHeight,height:buttonHeight)
             let countHeight = self.cardCount.intrinsicContentSize.height
-            self.cardCount.frame = NSRect(x:margin+buttonHeight+gap,y:navigationY+(buttonHeight-countHeight)/2,width:columnWidth-2*(buttonHeight+gap),height:countHeight)
+            let countY: CGFloat = CGFloat(navigationY)+(buttonHeight-countHeight)/2
+            self.cardCount.frame = NSRect(x:margin+buttonHeight+gap,y:countY,width:columnWidth-2*(buttonHeight+gap),height:countHeight)
             self.nextCard.frame = NSRect(x:margin+columnWidth-buttonHeight,y:navigationY,width:buttonHeight,height:buttonHeight)
             self.replyButton.frame = NSRect(x:margin+columnWidth+gap,y:navigationY,width:columnWidth,height:buttonHeight)
             self.retryButton.frame = NSRect(x:margin+columnWidth+gap,y:actionY,width:columnWidth,height:buttonHeight)
@@ -437,7 +439,7 @@ final class Bubble {
         approvalAllow.keyEquivalent = ""
         approvalReject.isEnabled = approval?.ready == true
         approvalAllow.isEnabled = approval?.ready == true && approval?.request.canAllow == true
-        approvalAllow.title = approval?.request.allowTitle ?? "允许这一次"
+        approvalAllow.title = approval?.request.allowTitle ?? "Allow Once"
         window.defaultButtonCell = nil
         configureElapsed(start:timing?.start,key:taskKey,finished:timing?.finished,status:timing?.status)
         // 只有任务消息正文允许复制；互动、额度加载及一般提示不参与文本选择。
@@ -452,7 +454,7 @@ final class Bubble {
         title.hoverHelp = kind == "progressToast" ? heading : nil
         setHeading(heading, animated: animateHeading && timing?.finished == nil)
         let bodyFont = NSFont.systemFont(ofSize:preferences.number("messageFontSize")*scale)
-        details.title = "查看记录详情"; details.isEnabled = true; details.isHidden = !enabled || attentionAction; details.emphasize(replyButton.isHidden); retryButton.isHidden = true
+        details.title = "View Details"; details.isEnabled = true; details.isHidden = !enabled || attentionAction; details.emphasize(replyButton.isHidden); retryButton.isHidden = true
         codexButton.isHidden = !enabled; codexButton.emphasize(attentionAction && approval == nil)
         configureButtons()
         if attentionAction && !questions.isEmpty {
@@ -477,7 +479,7 @@ final class Bubble {
                 previousQuestion.isHidden = false; skipQuestion.isHidden = false
                 previousQuestion.isEnabled = questionForm?.canGoBack == true; skipQuestion.isEnabled = questionForm?.canSkip == true
                 questionForm?.onSubmit = { [weak self] in self?.details.performClick(nil) }
-                details.title = submittingQuestion ? "正在提交…" : questionForm?.actionTitle ?? "提交回答"; details.emphasize(); details.isHidden = false; details.isEnabled = !submittingQuestion && questionForm?.canAdvance == true
+                details.title = submittingQuestion ? "Submitting…" : questionForm?.actionTitle ?? "Submit Answers"; details.emphasize(); details.isHidden = false; details.isEnabled = !submittingQuestion && questionForm?.canAdvance == true
                 codexButton.emphasize(false)
             }
             layoutQuestions()
@@ -490,7 +492,7 @@ final class Bubble {
             if isUserInput && !body.isEmpty {
                 // 发言人标记仅在气泡排版时添加，原始提问与历史正文保持原文。
                 let accent = NSColor(cgColor:AppAppearance.resolvedColor(AppAccent.color,for:window.effectiveAppearance))!
-                let prefix = NSAttributedString(string:preferences.ownerName+"：",attributes:[.font:bodyFont,.foregroundColor:accent])
+                let prefix = NSAttributedString(string:preferences.ownerName+": ",attributes:[.font:bodyFont,.foregroundColor:accent])
                 content.insert(prefix,at:0)
                 userInputPrefixLength = prefix.length
             }
@@ -620,7 +622,7 @@ final class Bubble {
     private func refreshElapsed() {
         guard let start = taskStartedAt else {return}
         elapsedLabel.stringValue = TaskTiming.elapsed(start:start,end:taskFinishedAt ?? Date())
-        elapsedLabel.setAccessibilityLabel("已处理 "+elapsedLabel.stringValue)
+        elapsedLabel.setAccessibilityLabel("Elapsed "+elapsedLabel.stringValue)
         if visible && abs(elapsedGroupWidth-elapsedLayoutWidth) > 0.5 {layout(bodyHeight:layoutBodyHeight)}
         layoutElapsed(in:window.frame.size)
     }
@@ -642,10 +644,10 @@ final class Bubble {
         onDetails = {failure.showDetails()}
         show(title:taskStatus.map {preferences.taskResultLine($0)} ?? failure.title, body:failure.message, kind:"error", scale:scale, seconds:0, details:true, timing:.init(start:taskStartedAt,finished:taskFinishedAt,status:taskStatus))
         purpose = .attention
-        details.title = "技术详情…"
+        details.title = "Technical Details…"
         codexButton.isHidden = true
-        if let retry {retryButton.title = "重试"; retryButton.isHidden = false; retryButton.callback = retry}
-        else if failure.openDesktop {retryButton.title = "打开 Codex"; retryButton.isHidden = false; retryButton.callback = {CodexConnection.openDesktop()}}
+        if let retry {retryButton.title = "Retry"; retryButton.isHidden = false; retryButton.callback = retry}
+        else if failure.openDesktop {retryButton.title = "Open Codex"; retryButton.isHidden = false; retryButton.callback = {CodexConnection.openDesktop()}}
         layout(bodyHeight:scroll.frame.height)
         refreshStandalone = { [weak self] in
             guard let self else {return}
@@ -657,8 +659,8 @@ final class Bubble {
         if let failure {
             purpose = .attention; countdown.stop()
             codexButton.isHidden = true
-            onDetails = {failure.showDetails()}; details.title = "技术详情…"; details.isHidden = false; details.emphasize(false)
-            if let retry {retryButton.title = "重试"; retryButton.callback = retry; retryButton.isHidden = false}
+            onDetails = {failure.showDetails()}; details.title = "Technical Details…"; details.isHidden = false; details.emphasize(false)
+            if let retry {retryButton.title = "Retry"; retryButton.callback = retry; retryButton.isHidden = false}
         }
         configureButtons()
         let width = bodyLayout.contentWidth
@@ -670,7 +672,7 @@ final class Bubble {
             text.frame = NSRect(x:0,y:y,width:width,height:height); content.addSubview(text); y += height
             return height
         }
-        addText("套餐 · "+overview.plan,font:.systemFont(ofSize:13*fontScale,weight:.semibold)); y += 12*scale
+        addText("Plan · "+overview.plan,font:.systemFont(ofSize:13*fontScale,weight:.semibold)); y += 12*scale
         for (index,row) in overview.rows.enumerated() {
             if index > 0 {
                 let line = NSBox(frame:NSRect(x:0,y:y,width:width,height:1)); line.boxType = .separator; content.addSubview(line); y += 12*scale
