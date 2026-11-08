@@ -24,14 +24,14 @@ enum HistorySearch {
         for turn in conversation.turns {
             let result:String? = autoreleasepool {
                 let body = turn.bodyReference.value()
-                for (name,text) in [("你",body.input),("思考摘要",body.summary),("执行记录",body.steps),("回复",body.messages),("回复",body.final),("文件",(body.fileEdits ?? []).map(\.path).joined(separator:"\n"))] {
+                for (name,text) in [("You",body.input),("Thinking summary",body.summary),("Execution log",body.steps),("Reply",body.messages),("Reply",body.final),("File",(body.fileEdits ?? []).map(\.path).joined(separator:"\n"))] {
                     if let match = firstRange(in:text,query:query) {return name+" · "+excerpt(text,around:match)}
                 }
                 return nil
             }
             if let result {return result}
         }
-        return ranges(in:conversation.title,query:query).isEmpty ? nil : "标题匹配"
+        return ranges(in:conversation.title,query:query).isEmpty ? nil : "Title match"
     }
     private static func firstRange(in text:String,query:String) -> NSRange? {
         let source = text as NSString

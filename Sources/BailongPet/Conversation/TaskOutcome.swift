@@ -12,9 +12,9 @@ enum TaskOutcome {
         }
         if !final.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty {return final}
         switch status {
-        case "completed": return "任务已完成，Codex 未提供文字回复。"
-        case "interrupted": return "本次任务已中断，未收到最终回复。"
-        default: return "本次任务执行失败，Codex 未提供错误说明。"
+        case "completed": return "The task completed. Codex did not provide a text reply."
+        case "interrupted": return "The task was interrupted. No final reply was received."
+        default: return "The task failed. Codex did not provide an error description."
         }
     }
 }

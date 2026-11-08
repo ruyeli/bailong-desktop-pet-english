@@ -36,13 +36,13 @@ final class QuotaCoordinator {
         switch result {
         case .failure(let error):
             pet.quotaActive = false
-            pet.say("Codex 额度",body:" ",kind:"quota")
+            pet.say("Codex Usage",body:" ",kind:"quota")
             pet.bubble.quotaRows(QuotaPresentation.unavailable(account:quotaAccount),scale:Double(pet.bubblePercent)/100,
                 failure:AppFailure.codex(error.localizedDescription),retry:{ [weak self] in self?.query() })
             pet.placeBubble()
         case .success(let value):
             let overview = QuotaPresentation.overview(value,account:quotaAccount)
-            if pet.bubble.kind != "quota" {pet.say("Codex 额度",body:" ",kind:"quota")}
+            if pet.bubble.kind != "quota" {pet.say("Codex Usage",body:" ",kind:"quota")}
             pet.bubble.quotaRows(overview,scale:Double(pet.bubblePercent)/100); pet.placeBubble()
         }
     }

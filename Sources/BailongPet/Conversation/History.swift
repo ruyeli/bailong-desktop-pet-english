@@ -68,7 +68,7 @@ final class Turn: Codable {
         owned = try c.decode(Bool.self,forKey:.owned)
         finished = try c.decode(Bool.self,forKey:.finished)
         if let id = try c.decodeIfPresent(String.self,forKey:.bodyID) {
-            guard let disk = decoder.userInfo[.historyDatabase] as? HistoryDatabase else {throw PetFailure(message:"历史正文引用缺少数据库")}
+            guard let disk = decoder.userInfo[.historyDatabase] as? HistoryDatabase else {throw PetFailure(message:"History body reference has no database")}
             bodyReference = HistoryBodyReference(id:id,disk:disk)
         } else {bodyReference = HistoryBodyReference(try HistoryBody(from:decoder))}
     }
@@ -106,7 +106,7 @@ final class Turn: Codable {
 final class Conversation: Codable {
     var key = UUID().uuidString
     var threadID: String? = nil
-    var title = "新对话"
+    var title = "New Chat"
     var localTitle: String? = nil
     var cwd = ""
     var external = false
@@ -137,9 +137,9 @@ struct HistoryDocument: Codable {
     func validateIdentity() throws {
         var keys = Set<String>(), turns = Set<String>()
         for conversation in conversations {
-            guard keys.insert(conversation.key).inserted else {throw PetFailure(message:"历史包含重复会话标识，原文件已保留。")}
+            guard keys.insert(conversation.key).inserted else {throw PetFailure(message:"History contains duplicate chat IDs. The original file is retained.")}
             for turn in conversation.turns {
-                guard turns.insert(turn.key).inserted else {throw PetFailure(message:"历史包含重复轮次标识，原文件已保留。")}
+                guard turns.insert(turn.key).inserted else {throw PetFailure(message:"History contains duplicate turn IDs. The original file is retained.")}
             }
         }
     }
@@ -155,7 +155,7 @@ final class HistoryStore {
     func clearBodyCache() {database?.clearCache()}
     var cachedBodyBytes:Int {database?.cachedBytes ?? 0}
     var isReadOnly:Bool {readOnlyReason != nil}
-    private let queue = DispatchQueue(label:"白龙娘历史保存")
+    private let queue = DispatchQueue(label:"Bailong History Writer")
     private let lock = NSLock()
     private let url: URL
     private var exportSourceURL:URL
@@ -183,7 +183,7 @@ final class HistoryStore {
             func readLegacy() throws -> HistoryDocument {
                 let old = try JSONDecoder().decode(HistoryDocument.self,from:Data(contentsOf:url))
                 try old.validateIdentity()
-                guard [1,2].contains(old.schemaVersion) else {throw PetFailure(message:"历史格式不支持："+String(old.schemaVersion))}
+                guard [1,2].contains(old.schemaVersion) else {throw PetFailure(message:"Unsupported history format: "+String(old.schemaVersion))}
                 return old
             }
             if !existed,FileManager.default.fileExists(atPath:url.path) {legacy = try readLegacy()}
@@ -201,9 +201,9 @@ final class HistoryStore {
             }
             archive = makeSnapshot(preservingExcluded:false)
             for conversation in conversations {for turn in conversation.turns where turn.owned && (activeStatuses.contains(turn.status) || turn.status == "unknown") {
-                turn.status = "interrupted"; turn.error = "上次程序退出，任务未确认完成。"
+                turn.status = "interrupted"; turn.error = "The app quit previously. Task completion is unconfirmed."
             }}
-        } catch {initialReadOnlyReason = "历史读取或升级未完成，原文件保留："+error.localizedDescription}
+        } catch {initialReadOnlyReason = "History read or migration incomplete; original file retained: "+error.localizedDescription}
         database?.onReadFailure = { [weak self] error in self?.onError(error) }
         if policy.disabled || !recording {
             freezeCurrentTurns()
@@ -215,7 +215,7 @@ final class HistoryStore {
         policy.excludedTurns.formUnion(conversations.flatMap {$0.turns.map(\.key)})
     }
     func requireWritable() throws {
-        if let readOnlyReason {throw PetFailure(message:readOnlyReason+" 请在设置 → 高级中导出原文件或重新读取。")}
+        if let readOnlyReason {throw PetFailure(message:readOnlyReason+" Export the original file or reload it in Settings → Advanced.")}
     }
     func exportOriginal(to destination:URL) throws {
         queue.sync {}
@@ -263,7 +263,7 @@ final class HistoryStore {
                 if excluded {frozen = true; if let previous = oldTurns[t.key] {copy.turns.append(previous)}}
                 else {copy.turns.append(t.snapshot())}
             }
-            if frozen {copy.title = old?.title ?? "对话记录"; copy.localTitle = old?.localTitle}
+            if frozen {copy.title = old?.title ?? "Chat History"; copy.localTitle = old?.localTitle}
             if !preservingExcluded || !copy.turns.isEmpty || old != nil {records.append(copy)}
         }
         return HistoryDocument(conversations:records,recordingPolicy:policy)
@@ -294,7 +294,7 @@ final class HistoryStore {
             }
             guard let (document,epoch) = next else {return}
             do {
-                guard let database else {throw PetFailure(message:"历史数据库未打开")}
+                guard let database else {throw PetFailure(message:"History database is not open")}
                 try database.write(document)
                 DispatchQueue.main.async { [self] in if lock.withLock({writeEpoch == epoch && !suspended}) {onSaved()} }
             } catch {
@@ -337,7 +337,7 @@ final class HistoryStore {
     }
     private func commitManagement(_ document:HistoryDocument) throws {
         try requireWritable()
-        guard let database else {throw PetFailure(message:"历史数据库未打开")}
+        guard let database else {throw PetFailure(message:"History database is not open")}
         try database.write(document)
         archive = document
         lock.withLock {suspended = false; pending = nil; writeEpoch += 1}
@@ -349,7 +349,7 @@ final class HistoryStore {
         queue.sync {}
         let fresh = HistoryRecordingPolicy(externalBefore:Date().timeIntervalSince1970,disabled:!recording)
         let document = HistoryDocument(conversations:[],recordingPolicy:fresh)
-        guard let database else {throw PetFailure(message:"历史数据库未打开")}
+        guard let database else {throw PetFailure(message:"History database is not open")}
         try database.write(document)
         database.clearCache()
         conversations.removeAll(); archive = document; policy = fresh

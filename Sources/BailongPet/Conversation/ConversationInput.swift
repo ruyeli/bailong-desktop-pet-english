@@ -2,7 +2,7 @@ import Foundation
 
 enum ConversationKind:Int,CaseIterable {
     case persona, project
-    var title:String {self == .persona ? "桌宠人设对话" : "Codex 项目对话"}
+    var title:String {self == .persona ? "Pet Persona Chat" : "Codex Project Chat"}
     var symbol:String {self == .persona ? "bubble.left" : "folder"}
 }
 extension Conversation {
@@ -51,7 +51,7 @@ struct ChatInputState {
         if stopping {return preferences.statusLine("taskStoppingTemplate")}
         if executing {return preferences.statusLine("conversationBusyTemplate")}
         if newConversation {return preferences.statusLine("conversationNewTemplate")}
-        return preferences.fixedText("主人，今天想让我帮什么忙呀？")
+        return preferences.fixedText("What can I help you with today, {userName}?")
     }
     var historyNote:String {
         if !note.isEmpty {return note}
@@ -59,15 +59,15 @@ struct ChatInputState {
         return PetPreferences.shared.statusLine(newConversation ? "conversationNewTemplate" : "historyIdleTemplate")
     }
     var note:String {
-        if readOnly {return "历史只读：请在设置 → 高级导出原文件或重新读取"}
-        if conversation == nil {return "请选择 Codex 项目对话"}
-        if sending {return "正在发送…"}
-        if unconfirmed {return "发送结果待确认，草稿已保留"}
+        if readOnly {return "History is read-only: export the original file or reload it in Settings → Advanced"}
+        if conversation == nil {return "Select a Codex project chat"}
+        if sending {return "Sending…"}
+        if unconfirmed {return "Delivery unconfirmed; draft retained"}
         if stopping {return PetPreferences.shared.statusLine("taskStoppingTemplate")}
         if ownsRunningTask {return PetPreferences.shared.statusLine("historyBusyTemplate")}
-        if let runningTitle {return "桌宠任务正在执行："+runningTitle}
+        if let runningTitle {return "Pet task running: "+runningTitle}
         if let replyNote {return replyNote}
-        if kind == .project {return replyMode == .steer ? "执行中 · 发送后插话" : replyMode == nil ? "当前会话等待处理，请转到 Codex" : ""}
+        if kind == .project {return replyMode == .steer ? "Running · Send a follow-up" : replyMode == nil ? "This chat needs attention. Go to Codex." : ""}
         return ""
     }
 }

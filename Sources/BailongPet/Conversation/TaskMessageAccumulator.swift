@@ -47,7 +47,7 @@ final class TaskMessageAccumulator {
                 updateActivity(item)
             }
         }
-        case "turn/plan/updated": steps["plan"] = (p["plan"] as? [[String:Any]] ?? []).map { "\($0["status"] ?? "") · \($0["step"] ?? "")" }.joined(separator:"\n"); currentActivity = .init(title:"正在更新计划",detail:steps["plan"] ?? "",templateKey:"taskUpdateTemplate")
+        case "turn/plan/updated": steps["plan"] = (p["plan"] as? [[String:Any]] ?? []).map { "\($0["status"] ?? "") · \($0["step"] ?? "")" }.joined(separator:"\n"); currentActivity = .init(title:"Updating plan",detail:steps["plan"] ?? "",templateKey:"taskUpdateTemplate")
         default:return false
         }
         return true
@@ -76,7 +76,7 @@ final class TaskMessageAccumulator {
                 messages[id] = link; imageMessageIDs.insert(id); steps.removeValue(forKey:id)
                 currentActivity = nil
             } else if ["inProgress","running"].contains(item["status"] as? String ?? "") {
-                steps[id] = "正在生成图片"
+                steps[id] = "Generating image"
             } else {steps.removeValue(forKey:id)}
         case "reasoning":
             // 只读取协议公开 summary，不读取 content 或加密推理字段。
@@ -86,8 +86,8 @@ final class TaskMessageAccumulator {
             if editsByItem[id] == nil {editOrder.append(id)}
             editsByItem[id] = FileEditSummary.read(item)
             steps.removeValue(forKey:id)
-        case "mcpToolCall", "dynamicToolCall": steps[id] = "\(item["status"] ?? "") · \(item["tool"] ?? "工具")"
-        case "webSearch": steps[id] = "搜索：\(item["query"] ?? "")"
+        case "mcpToolCall", "dynamicToolCall": steps[id] = "\(item["status"] ?? "") · \(item["tool"] ?? "Tool")"
+        case "webSearch": steps[id] = "Search: \(item["query"] ?? "")"
         default:break
         }
     }

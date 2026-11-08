@@ -68,7 +68,7 @@ final class DesktopConversationSession {
             case .failure(let error):
                 self.desktopSettings.removeValue(forKey:key)
                 self.settingsReady.remove(key)
-                self.desktopModelNotes[key] = error is DesktopReply.OwnerUnavailable ? error.localizedDescription : "读取会话设置失败："+error.localizedDescription
+                self.desktopModelNotes[key] = error is DesktopReply.OwnerUnavailable ? error.localizedDescription : "Unable to read chat settings: "+error.localizedDescription
             }
             self.onChange()
         }
@@ -88,7 +88,7 @@ final class DesktopConversationSession {
                 // 观察器与发送回执均以真实 turn ID 合并，避免生成两条记录。
                 if let turn = conversation.turns.first(where:{$0.id == receipt.turnID}) {
                     turn.lastMessageAt = started
-                    if target.mode == .steer {turn.input += (turn.input.isEmpty ? "" : "\n\n")+"插话："+text}
+                    if target.mode == .steer {turn.input += (turn.input.isEmpty ? "" : "\n\n")+"Follow-up: "+text}
                     else {turn.input = text}
                 }
                 else {
@@ -115,9 +115,9 @@ final class DesktopConversationSession {
         let key = conversation.key
         guard desktopUnconfirmed.contains(key) else {return}
         CodexConnection.openConversation(conversation.threadID)
-        let alert = NSAlert(); alert.messageText = "检查 Codex 中的发送结果"
-        alert.informativeText = "请查看“\(conversation.title)”是否已收到这条消息。草稿仍保留；确认未发送后才重新启用发送。"
-        alert.addButton(withTitle:"保留待确认状态"); alert.addButton(withTitle:"已确认未发送"); alert.applyAccent()
+        let alert = NSAlert(); alert.messageText = "Check delivery in Codex"
+        alert.informativeText = "Check whether \(conversation.title) received this message. Your draft is retained; sending is re-enabled only after you confirm it was not sent."
+        alert.addButton(withTitle:"Keep Unconfirmed Status"); alert.addButton(withTitle:"Confirmed Not Sent"); alert.applyAccent()
         alert.beginSheetModal(for:parent) { [weak self] response in
             guard response == .alertSecondButtonReturn,let self,self.store.conversations.contains(where:{$0 === conversation}) else {return}
             self.desktopUnconfirmed.remove(key); self.desktopReplyNotes.removeValue(forKey:key); self.onChange()
