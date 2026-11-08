@@ -3,7 +3,7 @@ import CoreImage
 
 // 只覆盖本应用外观；nil 交给 AppKit 随系统明暗模式实时更新。
 enum AppAppearance {
-    static let choices = [("system","跟随系统"),("light","浅色"),("dark","深色")]
+    static let choices = [("system","System"),("light","Light"),("dark","Dark")]
     static var selection: String {SettingsStorage.defaults.string(forKey:"appearanceMode") ?? "system"}
     private static let systemColorObserver = NotificationCenter.default.addObserver(forName:NSColor.systemColorsDidChangeNotification,object:nil,queue:.main) { _ in
         NotificationCenter.default.post(name:AppAccent.didChange,object:nil)
@@ -31,7 +31,7 @@ enum AppAppearance {
 
 enum AppAccent {
     static let didChange = Notification.Name("BailongAccentDidChange")
-    static let choices = [("system","跟随系统"),("blue","蓝色"),("purple","紫色"),("pink","粉色"),("red","红色"),("orange","橙色"),("yellow","黄色"),("green","绿色"),("gray","石墨色"),("custom","自定义")]
+    static let choices = [("system","System"),("blue","Blue"),("purple","Purple"),("pink","Pink"),("red","Red"),("orange","Orange"),("yellow","Yellow"),("green","Green"),("gray","Graphite"),("custom","Custom")]
     static var selection: String {SettingsStorage.defaults.string(forKey:"accentStyle") ?? "system"}
     static var color: NSColor {color(for:selection)}
     // 用户图三：每个色点中心 19×19 区域的 RGB 众数，排除边缘、双环与阴影。
@@ -213,7 +213,7 @@ final class SettingsFooterButton: NSButton {
 extension NSAlert {
     // 视觉主操作与回车默认操作分开，审批仍默认拒绝。
     func applyAccent(primary: Int = 0, keyboardDefault: Int? = 0) {
-        if buttons.isEmpty {addButton(withTitle:"好")}
+        if buttons.isEmpty {addButton(withTitle:"OK")}
         layout()
         for (index,button) in buttons.enumerated() {
             // NSAlert 的危险按钮由系统绘制，不能再覆盖为纯红底。

@@ -42,7 +42,7 @@ enum FileEditRendering {
         func cell(_ content:NSAttributedString,row:Int,column:Int) {
             let block = NSTextTableBlock(table:table,startingRow:row,rowSpan:1,startingColumn:column,columnSpan:1)
             if column == 1 {block.setContentWidth(countWidth,type:.absoluteValueType)}
-            block.setWidth(5,type:.absoluteValueType,for:.padding); block.verticalAlignment = .top
+            block.setWidth(5,type:.absoluteValueType,for:.padding); block.verticalAlignment = NSTextBlock.VerticalAlignment(rawValue: 0)! // NSTextBlockTopAlignment; stable across SDK names.
             if row == 1 {
                 block.setWidth(0.5,type:.absoluteValueType,for:.border,edge:.minY)
                 block.setBorderColor(.separatorColor)
@@ -60,8 +60,8 @@ enum FileEditRendering {
             value.addAttribute(.paragraphStyle,value:style,range:NSRange(location:0,length:value.length))
             result.append(value)
         }
-        let header = NSMutableAttributedString(string:"已编辑 \(edits.count) 个文件",attributes:[.font:NSFont.systemFont(ofSize:font.pointSize,weight:.semibold),.foregroundColor:NSColor.labelColor])
-        if let image = NSImage(systemSymbolName:"doc.badge.plus",accessibilityDescription:"文件修改") {
+        let header = NSMutableAttributedString(string:"Edited \(edits.count) files",attributes:[.font:NSFont.systemFont(ofSize:font.pointSize,weight:.semibold),.foregroundColor:NSColor.labelColor])
+        if let image = NSImage(systemSymbolName:"doc.badge.plus",accessibilityDescription:"File changes") {
             let attachment = NSTextAttachment(); attachment.image = image
             attachment.bounds = NSRect(x:0,y:(font.capHeight-font.pointSize)/2,width:font.pointSize,height:font.pointSize)
             header.insert(NSAttributedString(string:"  ",attributes:base),at:0)
@@ -81,7 +81,7 @@ enum FileEditRendering {
             cell(edit.lines.map(counts) ?? NSAttributedString(string:""),row:index+1,column:1)
         }
         if edits.count > previewCount {
-            let label = expanded ? "收起文件列表  ⌃" : "再显示 \(edits.count-previewCount) 个文件  ⌄"
+            let label = expanded ? "Collapse file list  ⌃" : "Show \(edits.count-previewCount) more files  ⌄"
             let attributes:[NSAttributedString.Key:Any] = [.link:disclosureLink,.cursor:NSCursor.pointingHand,.foregroundColor:NSColor.labelColor,.font:font]
             paragraph(NSAttributedString(string:label,attributes:attributes))
         }

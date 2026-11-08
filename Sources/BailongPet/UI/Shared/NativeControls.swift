@@ -3,7 +3,9 @@ import AppKit
 extension NSMenu {
     func showProvidedImages() {
         for item in items {
+            #if compiler(>=6.4)
             if #available(macOS 27.0, *), item.image != nil {item.preferredImageVisibility = .visible}
+            #endif
             item.submenu?.showProvidedImages()
         }
     }
@@ -11,7 +13,7 @@ extension NSMenu {
 
 func showError(_ title: String, _ error: Error) {
     let alert = NSAlert(); alert.messageText = title; alert.informativeText = error.localizedDescription
-    alert.alertStyle = .warning; alert.addButton(withTitle: "好")
+    alert.alertStyle = .warning; alert.addButton(withTitle: "OK")
     alert.applyAccent(); NSApp.activate(ignoringOtherApps: true); alert.runModal()
 }
 func label(_ text: String, bold: Bool = false) -> NSTextField {
@@ -127,7 +129,7 @@ class HoverIconButton: NSButton {
 final class BubbleCloseButton: HoverIconButton {
     var onClose:() -> Void = {}
     init() {
-        super.init(symbol:"xmark",label:"关闭气泡")
+        super.init(symbol:"xmark",label:"Close bubble")
         target = self; action = #selector(closeBubble)
     }
     required init?(coder:NSCoder) {fatalError()}
@@ -193,6 +195,7 @@ final class BubbleBackgroundView: NSView {
     @objc private func updateMaterial() {
         let enabled = preferences.usesGlass && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
         let next: CGFloat = enabled ? 0 : 1
+        #if compiler(>=6.2)
         if #available(macOS 26.0, *), enabled {
             if glass == nil {
                 let effect = NSGlassEffectView(frame:bounds)
@@ -205,6 +208,7 @@ final class BubbleBackgroundView: NSView {
             effect.style = preferences.bool("glassFollowsSystem") ? .regular : .clear
             glassBacking.opacity = preferences.bool("glassFollowsSystem") ? 0 : CGFloat(preferences.number("glassOpacity"))
         }
+        #endif
         let animate = preferences.bool("bubbleMotion") && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion && window?.isVisible == true
         if next == targetOpacity && fade != nil && animate {return}
         fade?.invalidate(); fade = nil; targetOpacity = next
@@ -267,7 +271,7 @@ enum TaskQuestionLayout {
                 y += 8*scale
                 let padding = 10*scale, numberWidth = 18*scale, gap = 6*scale
                 let contentX = padding+numberWidth+gap, contentWidth = width-contentX-padding
-                let badge = option.recommended ? text("推荐",detailFont,34*scale,color:AppAccent.color) : nil
+                let badge = option.recommended ? text("Recommended",detailFont,34*scale,color:AppAccent.color) : nil
                 let titleWidth = contentWidth-(badge.map {$0.frame.width+gap} ?? 0)
                 let name = text(option.title,bodyFont,titleWidth)
                 name.frame.origin = NSPoint(x:contentX,y:padding)

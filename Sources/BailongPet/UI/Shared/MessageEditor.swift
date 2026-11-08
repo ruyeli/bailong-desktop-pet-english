@@ -6,7 +6,7 @@ final class MessageEditor: AppTextView {
     override func resignFirstResponder() -> Bool {let result = super.resignFirstResponder(); onFocusChange(); return result}
     var send: () -> Void = {}
     var onTextChange: () -> Void = {}
-    var placeholder = PetPreferences.shared.fixedText("主人，把想做的事告诉我吧…") {didSet {needsDisplay = true}}
+    var placeholder = PetPreferences.shared.fixedText("Tell me what you'd like to do, {userName}…") {didSet {needsDisplay = true}}
     override func didChangeText() {super.didChangeText(); needsDisplay = true; onTextChange()}
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)

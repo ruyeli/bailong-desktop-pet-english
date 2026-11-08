@@ -76,8 +76,8 @@ enum MarkdownText {
                 // 保留图片入口，不再丢弃 Markdown 图片地址；不把远程图片下载到本机。
                 attributes.merge(LinkAppearance.attributes(for:image)) {_,link in link}
                 let description = value.replacingOccurrences(of:"\u{FFFC}",with:"").trimmingCharacters(in:.whitespacesAndNewlines)
-                let name = image.lastPathComponent.isEmpty ? "查看图片" : image.lastPathComponent
-                value = "图片：" + (description.isEmpty ? name : description)
+                let name = image.lastPathComponent.isEmpty ? "View Image" : image.lastPathComponent
+                value = "Image: " + (description.isEmpty ? name : description)
             }
             let text = NSAttributedString(string:prefix+value,attributes:attributes)
             fragments.append(Fragment(block:block,table:tableID,code:codeID,text:text))
@@ -147,7 +147,7 @@ enum MarkdownText {
                 block.setWidth(6,type:.absoluteValueType,for:.padding)
                 block.setWidth(0.5,type:.absoluteValueType,for:.border)
                 block.setBorderColor(.separatorColor)
-                block.verticalAlignment = .top
+                block.verticalAlignment = NSTextBlock.VerticalAlignment(rawValue: 0)! // NSTextBlockTopAlignment; stable across SDK names.
                 if content.headers.contains(rowID) {block.backgroundColor = .quaternaryLabelColor}
                 let paragraph = NSMutableParagraphStyle()
                 paragraph.textBlocks = [block]; paragraph.lineSpacing = lineSpacing; paragraph.paragraphSpacing = 0
