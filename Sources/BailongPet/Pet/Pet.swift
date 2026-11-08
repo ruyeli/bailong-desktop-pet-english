@@ -60,8 +60,8 @@ final class PetController: NSObject, NSMenuDelegate {
     private var toastActivities = [String:TaskActivity]()
     private var progressToastKey:String?
     var diagnostics: DiagnosticsPanel?
-    var syncDiagnostics: () -> String = { "等待初始化" }
-    var cliDiagnostics: () -> String = { "尚未初始化" }
+    var syncDiagnostics: () -> String = { "Waiting for initialization" }
+    var cliDiagnostics: () -> String = { "Not initialized" }
     let settings: SettingsPanel
     let preferences: PetPreferences
     let defaults: UserDefaults
@@ -75,7 +75,7 @@ final class PetController: NSObject, NSMenuDelegate {
     var onVisibility: (Bool) -> Void = { _ in }
     var onGeometry: () -> Void = {}
     var onPreferencesChanged: () -> Void = {}
-    var syncStatus: () -> String = { "正在准备读取本机 Codex 的任务记录。" }
+    var syncStatus: () -> String = { "Preparing to read local Codex task records." }
     var current: Clip
     var animation: Animation?
     var frameIndex = 0
@@ -193,7 +193,7 @@ final class PetController: NSObject, NSMenuDelegate {
         observationTokens.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in self?.keepOnScreen(); self?.applyPreferredDisplay() })
         let startup = NSPanel(contentRect:NSRect(x:0,y:0,width:440,height:108),styleMask:[.titled],backing:.buffered,defer:false)
         startup.title = preferences.appName; startup.isReleasedWhenClosed = false; startup.hidesOnDeactivate = false
-        let heading = label(preferences.fixedText("主人，等我整理好裙摆和小翅膀，马上就来…")); heading.frame = NSRect(x:24,y:60,width:392,height:24)
+        let heading = label(preferences.fixedText("Just straightening my dress and little wings. I'll be right there…")); heading.frame = NSRect(x:24,y:60,width:392,height:24)
         let progress = NSProgressIndicator(frame:NSRect(x:24,y:28,width:392,height:16)); progress.isIndeterminate = true; progress.style = .bar; progress.startAnimation(nil)
         startup.contentView?.addSubview(heading); startup.contentView?.addSubview(progress)
         startup.center(); if !hidden {startup.orderFrontRegardless()}; self.startup = startup
@@ -246,7 +246,7 @@ final class PetController: NSObject, NSMenuDelegate {
                 self.began = self.now
                 if self.animation == nil {
                     self.timer?.invalidate(); self.timer = nil
-                    RecoveryWindow.show(id:"animation-initialization",report:RecoveryReport(title:"桌宠画面未能加载",message:"动画没有可显示的画面。请确认应用资源完整，再重新加载。设置和历史记录不会被重置。",module:"动画",operation:"初始化动画",error:error),actionTitle:"重新加载") { [weak self] in self?.play(clip,mode) }
+                    RecoveryWindow.show(id:"animation-initialization",report:RecoveryReport(title:"Unable to load pet animation",message:"No animation frames are available. Check that app resources are complete, then reload. Settings and history will not be reset.",module:"Animations",operation:"Initialize animation",error:error),actionTitle:"Reload") { [weak self] in self?.play(clip,mode) }
                     return
                 }
                 self.bubble.showFailure(AppFailure.animation(error),scale:Double(self.bubblePercent)/100,
@@ -442,7 +442,12 @@ final class PetController: NSObject, NSMenuDelegate {
             bubble.purpose = purpose
         } else {
             // 只有明确标记的实时任务概览复用卡片，不能按 interaction 类型合并普通消息。
-            let identity = taskOverview ? "task-overview" : (timing?.key.map {key in (thread ?? "")+":"+key+":"+String(timing?.start?.timeIntervalSince1970 ?? 0)+":"+(messageID ?? "status")} ?? UUID().uuidString)
+            let identity: String
+            if taskOverview {identity = "task-overview"}
+            else if let key = timing?.key {
+                let start = String(timing?.start?.timeIntervalSince1970 ?? 0)
+                identity = [thread ?? "", key, start, messageID ?? "status"].joined(separator: ":")
+            } else {identity = UUID().uuidString}
             let reply:(() -> Void)? = thread.flatMap {key in attentionAction ? nil : { [weak self] in self?.onReply(key) }}
             bubble.onCardLayout = { [weak self] in self?.placeBubble() }
             bubble.present(BubbleCard(id:identity,title:personalizeTitle ? preferences.fixedText(title) : title,body:body,kind:kind,

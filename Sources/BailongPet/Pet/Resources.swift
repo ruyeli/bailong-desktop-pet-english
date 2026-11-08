@@ -15,13 +15,13 @@ enum Paths {
     static func readVersion() throws -> String {
         let url = Bundle.main.bundleURL.pathExtension == "app" ? resources.appendingPathComponent("VERSION") : project.appendingPathComponent("VERSION")
         let version = try String(contentsOf:url,encoding:.utf8).trimmingCharacters(in:.whitespacesAndNewlines)
-        guard SemanticVersion(version) != nil else {throw PetFailure(message:"VERSION 中的版本号无法识别。")}
+        guard SemanticVersion(version) != nil else {throw PetFailure(message:"The version number in VERSION is invalid.")}
         return version
     }
     static var version:String {
         switch Result(catching:readVersion) {
         case .success(let value): return value
-        case .failure: return "版本不可读"
+        case .failure: return "Version unavailable"
         }
     }
 }
@@ -41,7 +41,8 @@ struct Clip: Decodable {
     let movementAngleRange: [Double]?
     let moveStartMs: Double?
     let moveStopMs: Double?
-    var title: String { name ?? ["idle": "默认待机", "idle2": "待机动作02", "drag": "拖拽", "landing": "落地", "quota": "查询额度"][id] ?? id }
+    var title: String { EnglishAnimations.titles[id] ?? name ?? id }
+    var defaultLine: String? { EnglishAnimations.lines[id] ?? line }
 }
 struct Catalog: Decodable {
     let idle: Clip
@@ -139,11 +140,11 @@ final class Decoder: @unchecked Sendable {
             do {
                 let asset = AVURLAsset(url: Paths.assets.appendingPathComponent(clip.playbackFile ?? clip.file))
                 guard let track = try await asset.loadTracks(withMediaType: .video).first else {
-                    throw PetFailure(message: "「\(clip.title)」没有视频轨道。")
+                    throw PetFailure(message: "No video track in \(clip.title).")
                 }
                 guard current(token) else { return }
                 let rate = try await track.load(.nominalFrameRate)
-                guard rate.isFinite && rate > 0 else {throw PetFailure(message:"「\(clip.title)」缺少有效的素材帧率。")}
+                guard rate.isFinite && rate > 0 else {throw PetFailure(message:"No valid source frame rate for \(clip.title).")}
                 let range = try await track.load(.timeRange)
                 guard current(token) else { return }
                 let streaming = StreamingAnimation(asset: asset, track: track, capacity: capacity, resolution: side,
@@ -157,7 +158,7 @@ final class Decoder: @unchecked Sendable {
                     guard let frames = try streaming.preload(isCurrent: { self.current(token) }, progress: { count in
                         self.lock.withLock { if self.generation == token { self.preloadProgress = (clip.id, count, streaming.frameCount) } }
                     }), current(token) else { return }
-                    guard let firstFrame = frames.first else { throw PetFailure(message: "「\(clip.title)」没有可播放的帧。") }
+                    guard let firstFrame = frames.first else { throw PetFailure(message: "No playable frames in \(clip.title).") }
                     let animation = Animation(frames,fps:Double(rate))
                     lock.withLock { if generation == token { resident[clip.id] = WeakAnimation(animation) } }
                     DispatchQueue.main.async {
